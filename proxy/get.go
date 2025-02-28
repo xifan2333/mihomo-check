@@ -17,63 +17,84 @@ import (
 
 func GetProxies() ([]map[string]any, error) {
 	log.Infoln("当前共设置了%d个订阅链接", len(config.GlobalConfig.SubUrls))
+
+	subUrls := make([]interface{}, len(config.GlobalConfig.SubUrls))
+	for i, url := range config.GlobalConfig.SubUrls {
+		subUrls[i] = url
+	}
+	// 根据 len(subUrls) 和 config.GlobalConfig.PrintProgress 计算出需要多少个线程
+	numWorkers := min(len(subUrls), config.GlobalConfig.Concurrent)
+
+	pool := utils.NewThreadPool(numWorkers, taskGetProxies)
+	pool.Start()
+	pool.AddTaskArgs(subUrls)
+	pool.Wait()
+	results := pool.GetResults()
 	var mihomoProxies []map[string]any
 
-	for _, subUrl := range config.GlobalConfig.SubUrls {
-		data, err := GetDateFromSubs(subUrl)
-		if err != nil {
-			return nil, err
+	for _, result := range results {
+		if result.Result != nil {
+			mihomoProxies = append(mihomoProxies, result.Result.([]map[string]any)...)
 		}
-		var config map[string]any
-		err = yaml.Unmarshal(data, &config)
-		if err != nil {
-			reg, _ := regexp.Compile("(ssr|ss|vmess|trojan|vless|hysteria|hy2|hysteria2)://")
-			// 如果不匹配则base64解码
-			if !reg.Match(data) {
-				data = []byte(parser.DecodeBase64(string(data)))
-			}
-			if reg.Match(data) {
-				proxies := strings.Split(string(data), "\n")
+	}
+	return mihomoProxies, nil
+}
 
-				for _, proxy := range proxies {
-					parseProxy, err := ParseProxy(proxy)
-					if err != nil {
-						continue
-					}
-					//如果proxy为空，则跳过
-					if parseProxy == nil {
-						continue
-					}
-					mihomoProxies = append(mihomoProxies, parseProxy)
+func taskGetProxies(args interface{}) (interface{}, error) {
+	subUrl := args.(string)
+	var mihomoProxies []map[string]any
+	data, err := GetDateFromSubs(subUrl)
+	if err != nil {
+		return nil, err
+	}
+	var config map[string]any
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		reg, _ := regexp.Compile("(ssr|ss|vmess|trojan|vless|hysteria|hy2|hysteria2)://")
+		// 如果不匹配则base64解码
+		if !reg.Match(data) {
+			data = []byte(parser.DecodeBase64(string(data)))
+		}
+		if reg.Match(data) {
+			proxies := strings.Split(string(data), "\n")
+
+			for _, proxy := range proxies {
+				parseProxy, err := ParseProxy(proxy)
+				if err != nil {
+					continue
 				}
-				return mihomoProxies, nil
+				// 如果proxy为空，则跳过
+				if parseProxy == nil {
+					continue
+				}
+				mihomoProxies = append(mihomoProxies, parseProxy)
 			}
 		}
-		proxyInterface, ok := config["proxies"]
-		if !ok || proxyInterface == nil {
-			log.Errorln("订阅链接: %s 没有proxies", subUrl)
-			continue
-		}
+	}
+	proxyInterface, ok := config["proxies"]
+	if !ok || proxyInterface == nil {
+		log.Errorln("订阅链接: %s 没有proxies", subUrl)
+		return nil, fmt.Errorf("订阅链接: %s 没有proxies", subUrl)
+	}
 
-		proxyList, ok := proxyInterface.([]any)
+	proxyList, ok := proxyInterface.([]any)
+	if !ok {
+		return nil, fmt.Errorf("订阅链接: %s 没有proxies", subUrl)
+	}
+
+	for _, proxy := range proxyList {
+		proxyMap, ok := proxy.(map[string]any)
 		if !ok {
 			continue
 		}
-
-		for _, proxy := range proxyList {
-			proxyMap, ok := proxy.(map[string]any)
-			if !ok {
-				continue
-			}
-			mihomoProxies = append(mihomoProxies, proxyMap)
-		}
+		mihomoProxies = append(mihomoProxies, proxyMap)
 	}
 	return mihomoProxies, nil
 }
 
 // 订阅链接中获取数据
 func GetDateFromSubs(subUrl string) ([]byte, error) {
-	maxRetries := 30
+	maxRetries := config.GlobalConfig.SubUrlsReTry
 	var lastErr error
 
 	client := utils.NewHTTPClient()
