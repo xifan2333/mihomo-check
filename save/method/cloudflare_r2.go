@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bestruirui/mihomo-check/config"
+	"github.com/bestruirui/mihomo-check/utils"
 	"github.com/metacubex/mihomo/log"
 )
 
@@ -33,7 +34,7 @@ type R2Uploader struct {
 // NewR2Uploader 创建新的R2上传器
 func NewR2Uploader() *R2Uploader {
 	return &R2Uploader{
-		client:    &http.Client{Timeout: 30 * time.Second},
+		client:    utils.NewHTTPClient(),
 		workerURL: config.GlobalConfig.WorkerURL,
 		token:     config.GlobalConfig.WorkerToken,
 	}

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bestruirui/mihomo-check/config"
+	"github.com/bestruirui/mihomo-check/utils"
 	"github.com/metacubex/mihomo/log"
 )
 
@@ -27,7 +28,7 @@ type WebDAVUploader struct {
 // NewWebDAVUploader 创建新的 WebDAV 上传器
 func NewWebDAVUploader() *WebDAVUploader {
 	return &WebDAVUploader{
-		client:   &http.Client{Timeout: 30 * time.Second},
+		client:   utils.NewHTTPClient(),
 		baseURL:  config.GlobalConfig.WebDAVURL,
 		username: config.GlobalConfig.WebDAVUsername,
 		password: config.GlobalConfig.WebDAVPassword,

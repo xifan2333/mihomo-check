@@ -10,6 +10,7 @@ import (
 
 	"github.com/bestruirui/mihomo-check/config"
 	"github.com/bestruirui/mihomo-check/proxy/parser"
+	"github.com/bestruirui/mihomo-check/utils"
 	"github.com/metacubex/mihomo/log"
 	"gopkg.in/yaml.v3"
 )
@@ -43,7 +44,6 @@ func GetProxies() ([]map[string]any, error) {
 					if parseProxy == nil {
 						continue
 					}
-					// fmt.Println(proxy)
 					mihomoProxies = append(mihomoProxies, parseProxy)
 				}
 				return mihomoProxies, nil
@@ -76,7 +76,7 @@ func GetDateFromSubs(subUrl string) ([]byte, error) {
 	maxRetries := 30
 	var lastErr error
 
-	client := &http.Client{}
+	client := utils.NewHTTPClient()
 
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {

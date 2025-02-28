@@ -51,7 +51,13 @@ func (app *App) Initialize() error {
 	if err := app.initConfigWatcher(); err != nil {
 		return fmt.Errorf("初始化配置文件监听失败: %w", err)
 	}
-
+	if config.GlobalConfig.Proxy.Type == "http" {
+		log.Infoln("使用http代理: %s", config.GlobalConfig.Proxy.Address)
+	} else if config.GlobalConfig.Proxy.Type == "socks" {
+		log.Infoln("使用socks代理: %s", config.GlobalConfig.Proxy.Address)
+	} else {
+		log.Infoln("不使用代理")
+	}
 	app.interval = config.GlobalConfig.CheckInterval
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bestruirui/mihomo-check/config"
+	"github.com/bestruirui/mihomo-check/utils"
 	"github.com/metacubex/mihomo/log"
 )
 
@@ -43,8 +44,9 @@ func NewGistUploader() *GistUploader {
 	if config.GlobalConfig.GithubAPIMirror != "" {
 		gistAPIURL = config.GlobalConfig.GithubAPIMirror + "/gists"
 	}
+
 	return &GistUploader{
-		client:   &http.Client{Timeout: 30 * time.Second},
+		client:   utils.NewHTTPClient(),
 		token:    config.GlobalConfig.GithubToken,
 		id:       config.GlobalConfig.GithubGistID,
 		isPublic: false,
