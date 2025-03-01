@@ -6,16 +6,13 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bestruirui/mihomo-check/config"
-	"github.com/metacubex/mihomo/log"
+	"github.com/bestruirui/bestsub/config"
 )
 
-// 定义通用的 HTTP 客户端接口
 type httpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// API 响应的结构体
 type versionResponse struct {
 	Version string `json:"version"`
 }
@@ -26,18 +23,17 @@ type providersResponse struct {
 	} `json:"providers"`
 }
 
-// makeRequest 处理通用的 HTTP 请求逻辑
 func makeRequest(client httpClient, method, url string) ([]byte, error) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("创建请求失败: %w", err)
+		return nil, fmt.Errorf("create request failed: %w", err)
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", config.GlobalConfig.MihomoApiSecret))
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("执行请求失败: %w", err)
+		return nil, fmt.Errorf("execute request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -45,12 +41,12 @@ func makeRequest(client httpClient, method, url string) ([]byte, error) {
 		if resp.StatusCode == http.StatusNoContent {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("API 返回非 200 状态码: %d", resp.StatusCode)
+		return nil, fmt.Errorf("API returned non-200 status code: %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("读取响应体失败: %w", err)
+		return nil, fmt.Errorf("read response body failed: %w", err)
 	}
 
 	return body, nil
@@ -58,29 +54,29 @@ func makeRequest(client httpClient, method, url string) ([]byte, error) {
 
 func UpdateSubs() {
 	if config.GlobalConfig.MihomoApiUrl == "" {
-		log.Warnln("未配置 MihomoApiUrl，跳过更新")
+		LogWarn("MihomoApiUrl not configured, skipping update")
 		return
 	}
 
 	version, err := getVersion(http.DefaultClient)
 	if err != nil {
-		log.Errorln("获取版本失败: %v", err)
+		LogError("get version failed: %v", err)
 		return
 	}
 
-	log.Infoln("当前Mihomo版本: %s", version)
+	LogInfo("Mihomo version: %s", version)
 
 	names, err := getNeedUpdateNames(http.DefaultClient)
 	if err != nil {
-		log.Errorln("获取需要更新的订阅失败: %v", err)
+		LogError("get need update subs failed: %v", err)
 		return
 	}
 
 	if err := updateSubs(http.DefaultClient, names); err != nil {
-		log.Errorln("更新订阅失败: %v", err)
+		LogError("update subs failed: %v", err)
 		return
 	}
-	log.Infoln("订阅更新完成")
+	LogInfo("subs updated")
 }
 
 func getVersion(client httpClient) (string, error) {
@@ -92,7 +88,7 @@ func getVersion(client httpClient) (string, error) {
 
 	var version versionResponse
 	if err := json.Unmarshal(body, &version); err != nil {
-		return "", fmt.Errorf("解析版本信息失败: %w", err)
+		return "", fmt.Errorf("parse version info failed: %w", err)
 	}
 	return version.Version, nil
 }
@@ -106,7 +102,7 @@ func getNeedUpdateNames(client httpClient) ([]string, error) {
 
 	var response providersResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("解析提供者信息失败: %w", err)
+		return nil, fmt.Errorf("parse provider info failed: %w", err)
 	}
 
 	var names []string
@@ -122,9 +118,9 @@ func updateSubs(client httpClient, names []string) error {
 	for _, name := range names {
 		url := fmt.Sprintf("%s/providers/proxies/%s", config.GlobalConfig.MihomoApiUrl, name)
 		if _, err := makeRequest(client, http.MethodPut, url); err != nil {
-			log.Errorln("更新订阅%s 失败: %v", name, err)
+			LogError("update sub %s failed: %v", name, err)
 		}
-		log.Infoln("成功更新订阅: %s", name)
+		LogInfo("update sub %s success", name)
 	}
 	return nil
 }

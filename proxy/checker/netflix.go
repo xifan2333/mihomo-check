@@ -1,22 +1,20 @@
-package platfrom
+package checker
 
 import "net/http"
 
-func CheckNetflix(httpClient *http.Client) (bool, error) {
-	// https://www.netflix.com/title/81280792
+func (c *Checker) NetflixTest() {
 	req, err := http.NewRequest("GET", "https://www.netflix.com/title/81280792", nil)
 	if err != nil {
-		return false, err
+		return
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-	resp, err := httpClient.Do(req)
+	resp, err := c.Proxy.Client.Do(req)
 	if err != nil {
-		return false, err
+		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
-		return true, nil
+		c.Proxy.Info.Unlock.Netflix = true
 	}
-	return false, nil
 }

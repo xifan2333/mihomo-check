@@ -1,32 +1,30 @@
-package proxies
+package parser
 
 import (
 	"strings"
-
-	"github.com/bestruirui/mihomo-check/proxy/parser"
 )
 
 func ParseProxy(proxy string) (map[string]any, error) {
 	if strings.HasPrefix(proxy, "ss://") {
-		return parser.ParseShadowsocks(proxy)
+		return ParseShadowsocks(proxy)
 	}
 	if strings.HasPrefix(proxy, "trojan://") {
-		return parser.ParseTrojan(proxy)
+		return ParseTrojan(proxy)
 	}
 	if strings.HasPrefix(proxy, "vmess://") {
-		return parser.ParseVmess(proxy)
+		return ParseVmess(proxy)
 	}
 	if strings.HasPrefix(proxy, "vless://") {
-		return parser.ParseVless(proxy)
+		return ParseVless(proxy)
 	}
 	if strings.HasPrefix(proxy, "hysteria2://") {
-		return parser.ParseHysteria2(proxy)
+		return ParseHysteria2(proxy)
 	}
 	if strings.HasPrefix(proxy, "hy2://") {
-		return parser.ParseHysteria2(proxy)
+		return ParseHysteria2(proxy)
 	}
 	if strings.HasPrefix(proxy, "ssr://") {
-		return parser.ParseSsr(proxy)
+		return ParseSsr(proxy)
 	}
 	return nil, nil
 }

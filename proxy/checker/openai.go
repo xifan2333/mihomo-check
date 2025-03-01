@@ -1,28 +1,24 @@
-package platfrom
+package checker
 
 import (
 	"io"
-	"net/http"
 	"strings"
 )
 
-func CheckOpenai(httpClient *http.Client) (bool, error) {
-	resp, err := httpClient.Get("https://android.chat.openai.com")
+func (c *Checker) OpenaiTest() {
+	resp, err := c.Proxy.Client.Get("https://android.chat.openai.com")
 	if err != nil {
-		return false, err
+		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 403 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return false, err
+			return
 		}
 		if strings.Contains(string(body), "Request is not allowed. Please try again later.") {
-			return true, nil
+			c.Proxy.Info.Unlock.Chatgpt = true
 		}
 	}
-
-	return false, nil
-
 }

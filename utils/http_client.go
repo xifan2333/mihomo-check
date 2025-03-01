@@ -5,11 +5,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/bestruirui/mihomo-check/config"
+	"github.com/bestruirui/bestsub/config"
 	"golang.org/x/net/proxy"
 )
 
-// NewHTTPClient 根据配置创建并返回一个 HTTP 客户端
 func NewHTTPClient() *http.Client {
 	var client *http.Client
 

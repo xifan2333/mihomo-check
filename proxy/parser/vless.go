@@ -7,77 +7,62 @@ import (
 	"strings"
 )
 
-// 将vless格式的节点转换为clash的节点
 func ParseVless(data string) (map[string]any, error) {
-
-	if !strings.HasPrefix(data, "vless://") {
-		return nil, fmt.Errorf("不是vless格式")
+	parsedURL, err := url.Parse(data)
+	if err != nil {
+		return nil, fmt.Errorf("parse failed: %v", err)
 	}
 
-	// 移除 "vless://" 前缀
-	data = strings.TrimPrefix(data, "vless://")
-
-	// 分离用户信息和服务器信息
-	parts := strings.SplitN(data, "@", 2)
-	if len(parts) != 2 {
-		return nil, nil
+	if parsedURL.Scheme != "vless" {
+		return nil, fmt.Errorf("not vless format")
 	}
 
-	uuid := parts[0]
-	remaining := parts[1]
-
-	// 分离服务器地址和参数
-	hostAndParams := strings.SplitN(remaining, "?", 2)
-	if len(hostAndParams) != 2 {
-		return nil, nil
-	}
-
-	// 分离服务器地址和端口
-	hostPort := strings.Split(hostAndParams[0], ":")
+	hostPort := strings.Split(parsedURL.Host, ":")
 	if len(hostPort) != 2 {
 		return nil, nil
 	}
 
-	host := hostPort[0]
-	port, err := strconv.Atoi(hostPort[1])
+	port, err := strconv.Atoi(parsedURL.Port())
 	if err != nil {
-		return nil, fmt.Errorf("格式错误: 端口格式不正确")
+		return nil, fmt.Errorf("format error: incorrect port format")
 	}
 
-	// 解析参数
-	params, err := url.ParseQuery(hostAndParams[1])
-	if err != nil {
-		return nil, nil
-	}
+	query := parsedURL.Query()
 
-	// 提取节点名称
-	name := ""
-	if idx := strings.LastIndex(data, "#"); idx != -1 {
-		name = data[idx+1:]
-		name, _ = url.QueryUnescape(name)
-	}
-
-	// 构建 clash 格式的代理配置
 	proxy := map[string]any{
-		"name":       name,
-		"type":       "vless",
-		"server":     host,
-		"port":       port,
-		"uuid":       uuid,
-		"network":    params.Get("type"),
-		"tls":        params.Get("security") == "tls",
-		"servername": params.Get("sni"),
-	}
-
-	// 添加 ws 特定配置
-	if params.Get("type") == "ws" {
-		wsOpts := map[string]any{
-			"path": params.Get("path"),
+		"name":               parsedURL.Fragment,
+		"type":               "vless",
+		"server":             parsedURL.Hostname(),
+		"port":               port,
+		"uuid":               parsedURL.User.String(),
+		"network":            query.Get("type"),
+		"tls":                query.Get("security") != "none",
+		"udp":                query.Get("udp") == "true",
+		"servername":         query.Get("sni"),
+		"flow":               query.Get("flow"),
+		"client-fingerprint": query.Get("fp"),
+		"ws-opts": map[string]any{
+			"path": query.Get("path"),
 			"headers": map[string]any{
-				"Host": params.Get("host"),
+				"Host": query.Get("host"),
 			},
-		}
-		proxy["ws-opts"] = wsOpts
+		},
+		"reality-opts": map[string]any{
+			"public-key": query.Get("pbk"),
+			"short-id":   query.Get("sid"),
+		},
+		"grpc-opts": map[string]any{
+			"grpc-service-name": query.Get("serviceName"),
+		},
+		"security":    query.Get("security"),
+		"sni":         query.Get("sni"),
+		"fp":          query.Get("fp"),
+		"pbk":         query.Get("pbk"),
+		"sid":         query.Get("sid"),
+		"path":        query.Get("path"),
+		"host":        query.Get("host"),
+		"serviceName": query.Get("serviceName"),
+		"mode":        query.Get("mode"),
 	}
 
 	return proxy, nil

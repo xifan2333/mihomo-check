@@ -1,19 +1,16 @@
-package platfrom
+package checker
 
 import (
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/bestruirui/mihomo-check/config"
+	"github.com/bestruirui/bestsub/config"
 )
 
 func CheckSpeed(httpClient *http.Client) (int, error) {
-	// 创建一个新的测速专用客户端，基于原有客户端的传输层
 	speedClient := &http.Client{
-		// 设置更长的超时时间用于测速
-		Timeout: time.Duration(config.GlobalConfig.DownloadTimeout) * time.Second,
-		// 保持原有的传输层配置
+		Timeout:   time.Duration(config.GlobalConfig.DownloadTimeout) * time.Second,
 		Transport: httpClient.Transport,
 	}
 
@@ -23,7 +20,7 @@ func CheckSpeed(httpClient *http.Client) (int, error) {
 	}
 	defer resp.Body.Close()
 
-	buffer := make([]byte, 32*1024) // 32KB 缓冲区
+	buffer := make([]byte, 32*1024)
 	totalBytes := 0
 	var startTime time.Time
 	firstRead := true
@@ -40,7 +37,6 @@ func CheckSpeed(httpClient *http.Client) (int, error) {
 			if err == io.EOF {
 				break
 			}
-			// 如果是其他错误，且已经读取了一些数据，我们仍然可以计算速度
 			if totalBytes > 0 {
 				break
 			}
@@ -48,18 +44,15 @@ func CheckSpeed(httpClient *http.Client) (int, error) {
 		}
 	}
 
-	// 如果没有读取到任何数据
 	if firstRead {
 		return 0, nil
 	}
 
-	// 计算下载时间（毫秒）
 	duration := time.Since(startTime).Milliseconds()
 	if duration == 0 {
-		duration = 1 // 避免除以零
+		duration = 1
 	}
 
-	// 计算速度（KB/s）
 	speed := int(float64(totalBytes) / 1024 * 1000 / float64(duration))
 
 	return speed, nil

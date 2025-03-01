@@ -1,11 +1,12 @@
 package config
 
 type ProxyConfig struct {
-	Type    string `yaml:"type"`    // 代理类型: http 或 socks
-	Address string `yaml:"address"` // 代理地址
+	Type    string `yaml:"type"`
+	Address string `yaml:"address"`
 }
-
 type Config struct {
+	Port            int         `yaml:"port"`
+	CheckItems      []string    `yaml:"check-items"`
 	PrintProgress   bool        `yaml:"print-progress"`
 	Concurrent      int         `yaml:"concurrent"`
 	CheckInterval   int         `yaml:"check-interval"`
@@ -28,7 +29,8 @@ type Config struct {
 	SubUrls         []string    `yaml:"sub-urls"`
 	MihomoApiUrl    string      `yaml:"mihomo-api-url"`
 	MihomoApiSecret string      `yaml:"mihomo-api-secret"`
-	Proxy           ProxyConfig `yaml:"proxy"` // 添加代理配置
+	Proxy           ProxyConfig `yaml:"proxy"`
+	RenameMethod    string      `yaml:"rename-method"`
 }
 
 var GlobalConfig Config
