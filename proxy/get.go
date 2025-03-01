@@ -1,4 +1,4 @@
-package proxies
+package proxy
 
 import (
 	"fmt"
@@ -8,21 +8,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bestruirui/mihomo-check/config"
-	"github.com/bestruirui/mihomo-check/proxy/parser"
-	"github.com/bestruirui/mihomo-check/utils"
-	"github.com/metacubex/mihomo/log"
+	"github.com/bestruirui/bestsub/config"
+	"github.com/bestruirui/bestsub/proxy/parser"
+	"github.com/bestruirui/bestsub/utils"
 	"gopkg.in/yaml.v3"
 )
 
 func GetProxies() ([]map[string]any, error) {
-	log.Infoln("当前共设置了%d个订阅链接", len(config.GlobalConfig.SubUrls))
+	utils.LogInfo("currently, there are %d subscription links set", len(config.GlobalConfig.SubUrls))
 
 	subUrls := make([]interface{}, len(config.GlobalConfig.SubUrls))
 	for i, url := range config.GlobalConfig.SubUrls {
 		subUrls[i] = url
 	}
-	// 根据 len(subUrls) 和 config.GlobalConfig.PrintProgress 计算出需要多少个线程
 	numWorkers := min(len(subUrls), config.GlobalConfig.Concurrent)
 
 	pool := utils.NewThreadPool(numWorkers, taskGetProxies)
@@ -43,7 +41,7 @@ func GetProxies() ([]map[string]any, error) {
 func taskGetProxies(args interface{}) (interface{}, error) {
 	subUrl := args.(string)
 	var mihomoProxies []map[string]any
-	data, err := GetDateFromSubs(subUrl)
+	data, err := getDateFromSubs(subUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +49,6 @@ func taskGetProxies(args interface{}) (interface{}, error) {
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		reg, _ := regexp.Compile("(ssr|ss|vmess|trojan|vless|hysteria|hy2|hysteria2)://")
-		// 如果不匹配则base64解码
 		if !reg.Match(data) {
 			data = []byte(parser.DecodeBase64(string(data)))
 		}
@@ -59,11 +56,10 @@ func taskGetProxies(args interface{}) (interface{}, error) {
 			proxies := strings.Split(string(data), "\n")
 
 			for _, proxy := range proxies {
-				parseProxy, err := ParseProxy(proxy)
+				parseProxy, err := parser.ParseProxy(proxy)
 				if err != nil {
 					continue
 				}
-				// 如果proxy为空，则跳过
 				if parseProxy == nil {
 					continue
 				}
@@ -73,13 +69,13 @@ func taskGetProxies(args interface{}) (interface{}, error) {
 	}
 	proxyInterface, ok := config["proxies"]
 	if !ok || proxyInterface == nil {
-		log.Errorln("订阅链接: %s 没有proxies", subUrl)
-		return nil, fmt.Errorf("订阅链接: %s 没有proxies", subUrl)
+		utils.LogError("subscription link: %s has no proxies", subUrl)
+		return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
 	}
 
 	proxyList, ok := proxyInterface.([]any)
 	if !ok {
-		return nil, fmt.Errorf("订阅链接: %s 没有proxies", subUrl)
+		return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
 	}
 
 	for _, proxy := range proxyList {
@@ -92,8 +88,7 @@ func taskGetProxies(args interface{}) (interface{}, error) {
 	return mihomoProxies, nil
 }
 
-// 订阅链接中获取数据
-func GetDateFromSubs(subUrl string) ([]byte, error) {
+func getDateFromSubs(subUrl string) ([]byte, error) {
 	maxRetries := config.GlobalConfig.SubUrlsReTry
 	var lastErr error
 
@@ -119,7 +114,7 @@ func GetDateFromSubs(subUrl string) ([]byte, error) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
-			lastErr = fmt.Errorf("订阅链接: %s 返回状态码: %d", subUrl, resp.StatusCode)
+			lastErr = fmt.Errorf("subscription link: %s returned status code: %d", subUrl, resp.StatusCode)
 			continue
 		}
 
@@ -131,5 +126,5 @@ func GetDateFromSubs(subUrl string) ([]byte, error) {
 		return body, nil
 	}
 
-	return nil, fmt.Errorf("重试%d次后失败: %v", maxRetries, lastErr)
+	return nil, fmt.Errorf("failed after %d retries: %v", maxRetries, lastErr)
 }

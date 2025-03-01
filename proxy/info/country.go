@@ -1,27 +1,21 @@
-package proxies
+package info
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
-func GetProxyCountry(httpClient *http.Client) string {
-
-	infoClient := &http.Client{
-		// 设置更长的超时时间用于获取代理国家
-		Timeout: time.Duration(10) * time.Second,
-		// 保持原有的传输层配置
-		Transport: httpClient.Transport,
-	}
-	// 定义多个 IP 查询 API
+func (p *Proxy) CountryCodeFromApi() {
 	apis := []string{
 		"https://api.ip.sb/geoip",
 		"https://ipapi.co/json",
 		"https://ip.seeip.org/geoip",
 		"https://api.myip.com",
 	}
+	var countryCode string
 
 	for _, api := range apis {
 		for attempts := 0; attempts < 5; attempts++ {
@@ -45,7 +39,7 @@ func GetProxyCountry(httpClient *http.Client) string {
 			req.Header.Set("Sec-Fetch-User", "?1")
 			req.Header.Set("Upgrade-Insecure-Requests", "1")
 
-			resp, err := infoClient.Do(req)
+			resp, err := p.Client.Do(req)
 			if err != nil {
 				time.Sleep(time.Second * time.Duration(attempts))
 				continue
@@ -65,8 +59,6 @@ func GetProxyCountry(httpClient *http.Client) string {
 				continue
 			}
 
-			// 不同 API 返回的国家代码字段名可能不同
-			countryCode := ""
 			ok := false
 			switch api {
 			case "https://api.ip.sb/geoip":
@@ -92,9 +84,36 @@ func GetProxyCountry(httpClient *http.Client) string {
 			}
 
 			if ok && countryCode != "" {
-				return countryCode
+				break
 			}
 		}
 	}
-	return ""
+	if countryCode == "" {
+		p.Info.Country = "UN"
+	}
+	p.Info.Country = countryCode
 }
+func getFlag(countryCode string) string {
+
+	code := strings.ToUpper(countryCode)
+
+	const flagBase = 127397
+
+	first := string(rune(code[0]) + flagBase)
+	second := string(rune(code[1]) + flagBase)
+
+	return first + second
+}
+func (p *Proxy) CountryFlag() {
+	p.Info.Flag = getFlag(p.Info.Country)
+}
+
+// func (p *Proxy) CountryCodeFromYaml() {
+// 	yamlFile, err := os.Open("countries.yaml")
+// 	if err != nil {
+// 		fmt.Println("Error opening YAML file:", err)
+// 		return
+// 	}
+// 	defer yamlFile.Close()
+
+// }

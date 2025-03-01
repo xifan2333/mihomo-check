@@ -26,26 +26,21 @@ type vmessJson struct {
 	Fp   string      `json:"fp"`
 }
 
-// 将vmess格式的节点转换为clash格式
 func ParseVmess(data string) (map[string]any, error) {
 	if !strings.HasPrefix(data, "vmess://") {
-		return nil, fmt.Errorf("不是vmess格式")
+		return nil, fmt.Errorf("not vmess format")
 	}
-	// 移除 "vmess://" 前缀
 	data = data[8:]
 
-	// base64解码
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, err
 	}
-	// 解析JSON
 	var vmessInfo vmessJson
 	if err := json.Unmarshal(decoded, &vmessInfo); err != nil {
 		return nil, err
 	}
 
-	// 处理 port，支持字符串和数字类型
 	var port int
 	switch v := vmessInfo.Port.(type) {
 	case float64:
@@ -54,10 +49,10 @@ func ParseVmess(data string) (map[string]any, error) {
 		var err error
 		port, err = strconv.Atoi(v)
 		if err != nil {
-			return nil, fmt.Errorf("格式错误: 端口格式不正确")
+			return nil, fmt.Errorf("format error: incorrect port format")
 		}
 	default:
-		return nil, fmt.Errorf("格式错误: 端口格式不正确")
+		return nil, fmt.Errorf("format error: incorrect port format")
 	}
 
 	var aid int
@@ -67,11 +62,10 @@ func ParseVmess(data string) (map[string]any, error) {
 	case string:
 		aid, err = strconv.Atoi(v)
 		if err != nil {
-			return nil, fmt.Errorf("格式错误: alterId格式不正确")
+			return nil, fmt.Errorf("format error: alterId format error")
 		}
 	}
 
-	// 构建clash格式配置
 	proxy := map[string]any{
 		"name":       vmessInfo.Ps,
 		"type":       "vmess",
@@ -85,7 +79,6 @@ func ParseVmess(data string) (map[string]any, error) {
 		"servername": vmessInfo.Sni,
 	}
 
-	// 根据不同传输方式添加特定配置
 	switch vmessInfo.Net {
 	case "ws":
 		wsOpts := map[string]any{
@@ -104,7 +97,6 @@ func ParseVmess(data string) (map[string]any, error) {
 		proxy["grpc-opts"] = grpcOpts
 	}
 
-	// 添加 ALPN 配置
 	if vmessInfo.Alpn != "" {
 		proxy["alpn"] = strings.Split(vmessInfo.Alpn, ",")
 	}

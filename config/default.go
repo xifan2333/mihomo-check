@@ -1,42 +1,48 @@
 package config
 
 const DefaultConfigTemplate = `
-# 是否显示进度
+# Whether to show progress
 print-progress: false
-
-# 并发线程数
+# Port
+port: 8080
+# Check items
+check-items:
+  - openai
+  - youtube
+  - netflix
+  - disney
+# Number of concurrent threads
 concurrent: 200
 
-# 检查间隔(分钟)
+# Check interval (minutes)
 check-interval: 30
 
-# 超时时间(毫秒)(节点的最大延迟)
+# Timeout (milliseconds) (maximum delay of nodes)
 timeout: 5000
 
-# 质量等级，等级越高，稳定性越高，等级过高可能导致筛选出来的节点数量过少
+# Quality level, the higher the level, the higher the stability; too high a level may result in too few nodes being filtered out
 quality-level: 1
 
-# 测速地址(注意 并发数*节点速度<最大网速 否则测速结果不准确)
-# 尽量不要使用Speedtest，Cloudflare提供的下载链接，因为很多节点屏蔽测速网站
-# 建议使用自己上传到Cloudflare R2的文件
-# 如不需要设置测速地址，请将 speed-test-url 设置为 ""
+# Speed test address (Note: concurrent * node speed < maximum network speed, otherwise the speed test result is inaccurate)
+# Try not to use Speedtest or download links provided by Cloudflare, as many nodes block speed test websites
+# It is recommended to use files uploaded to Cloudflare R2
+# If you do not need to set a speed test address, please set speed-test-url to ""
 speed-test-url: https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v2.21.12/Waifu2x-Extension-GUI-v2.21.12-Portable.7z
 
-# 最低测速结果舍弃(KB/s)
+# Minimum speed test result to discard (KB/s)
 min-speed: 1024
 
-# 下载测试时间(s)(与下载链接大小相关，默认最大测试10s)
+# Download test time (s) (related to the size of the download link, default maximum test 10s)
 download-timeout: 10
 
-
-# mihomo api url(测试完成后自动更新mihomo订阅)
+# mihomo api url (automatically update mihomo subscription after testing is complete)
 mihomo-api-url: ""
 
 # mihomo api secret
 mihomo-api-secret: ""
 
-# 保存方法
-# 目前支持的保存方法: r2, local, gist, webdav
+# Save method
+# Currently supported save methods: r2, local, gist, webdav
 save-method: local
 
 # webdav
@@ -53,23 +59,23 @@ github-token: ""
 # github api mirror
 github-api-mirror: ""
 
-# 将测速结果推送到Worker的地址
+# Address to push speed test results to Worker
 worker-url: https://example.worker.dev
 
-# Worker令牌
+# Worker token
 worker-token: 1234567890
 
-# 重试次数(获取订阅失败后重试次数)
+# Retry count (number of retries after subscription retrieval fails)
 sub-urls-retry: 3
 
-# 代理设置,此代理仅用于获取订阅链接,和上传保存(并不用于节点测试等相关)
-# 支持 http 和 socks 代理
-# 如不需要设置代理，请将 type 设置为 ""
+# Proxy settings, this proxy is only used to obtain subscription links and upload/save (not used for node testing, etc.)
+# Supports http and socks proxy
+# If you do not need to set a proxy, please set type to ""
 proxy:
-  type: "http" # 可选值: http, socks，如果不需要设置代理，请将 type 设置为 ""
-  address: "http://localhost:8080" # 代理地址
+  type: "http" # Optional values: http, socks; if you do not need to set a proxy, please set type to ""
+  address: "http://localhost:8080" # Proxy address
 
-# 订阅地址 支持 clash/mihomo/v2ray/base64 格式的订阅链接
+# Subscription address supports clash/mihomo/v2ray/base64 format subscription links
 sub-urls:
   - https://example.com/sub.txt
   - https://example.com/sub2.txt

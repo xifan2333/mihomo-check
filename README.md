@@ -1,41 +1,53 @@
-# 订阅合并转换检测工具
+# Subscription Merge and Conversion Detection Tool
 
-## 预览
+<div align="center">
+  <img src="https://img.shields.io/github/v/release/bestruirui/BestSub?color=blue" alt="Version">
+  <img src="https://img.shields.io/badge/Language-Go-green" alt="Language">
+  <a href="./README_zh.md">
+    <img src="https://img.shields.io/badge/中文文档-brightgreen" alt="中文文档">
+  </a>
+  <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
+</div>
+
+## Preview
 
 ![preview](./doc/images/preview.png)
 
-## 功能
+## Features
 
-- 检测节点可用性,去除不可用节点
-- 检测平台解锁情况
+- ✅ Detect node availability and remove unavailable nodes
+- ✅ Custom platform unlocking detection
     - openai
     - youtube
     - netflix
     - disney
-- 合并多个订阅
-- 将订阅转换为clash/mihomo格式
-- 节点去重
-- 节点重命名
-- 节点测速
-- 根据解锁情况分类保存
+- ✅ Merge multiple subscriptions
+- ✅ Convert subscriptions to clash/mihomo format
+- ✅ Remove duplicate nodes
+- ✅ Rename nodes
+    - API naming
+    - Custom rule naming
+- ✅ Test node speed
+- ✅ Classify and save based on unlocking status
 
-## 特点
+## Characteristics
 
-- 支持多平台
-- 支持多线程
-- 资源占用低
+- 🚀 Supports multiple platforms
+- ⚡ Supports multithreading
+- 🍃 Low resource consumption
 
 ## TODO
 
-- [x] 适配多种订阅格式
-- [ ] 支持更多的保存方式
-    - [x] 本地
+- [x] Adapt to various subscription formats
+- [ ] Support more saving methods
+    - [x] Local
     - [x] cloudflare r2
     - [x] gist
     - [x] webdav
-    - [ ] 其他
+    - [x] http
+    - [ ] Others
 
-## 使用方法
+## Usage
 
 ### Docker
 
@@ -48,48 +60,48 @@ docker run -itd \
     ghcr.io/bestruirui/subs-check
 ```
 
-### 源码直接运行
+### Run from Source Code
 
 ```bash
 go run main.go -f /path/to/config.yaml
 ```
 
-### 二进制文件运行
+### Run Binary File
 
-直接运行即可,会在当前目录生成配置文件
+Just run it, and a configuration file will be generated in the current directory.
 
-### 自建测速地址
+### Self-hosted Speed Test Address
 
-- 将 [worker](./cloudflare/worker.js) 部署到 cloudflare workers
+- Deploy the [worker](./cloudflare/worker.js) to Cloudflare Workers
 
-- 将 `speed-test-url` 配置为你的 worker 地址
+- Set `speed-test-url` to your worker address
 
 ```yaml
 speed-test-url: https://your-worker-url/speedtest?bytes=1000000
 ```
 
-## 保存方法配置
+## Save Method Configuration
 
-- 本地保存: 将结果保存到本地,默认保存到可执行文件目录下的 output 文件夹
-- r2: 将结果保存到 cloudflare r2 存储桶 [配置方法](./doc/r2.md)
-- gist: 将结果保存到 github gist [配置方法](./doc/gist.md)
-- webdav: 将结果保存到 webdav 服务器 [配置方法](./doc/webdav.md)
+- 📁 Local Save: Save results locally, default to the output folder in the executable file directory.
+- ☁️ r2: Save results to Cloudflare R2 bucket [Configuration Method](./doc/r2.md)
+- 💾 gist: Save results to GitHub Gist [Configuration Method](./doc/gist.md)
+- 🌐 webdav: Save results to webdav server [Configuration Method](./doc/webdav.md)
 
-## 订阅使用方法
+## Subscription Usage Method
 
-推荐直接裸核运行 tun 模式 
+It is recommended to run in bare metal mode directly.
 
-我自己写的Windows下的裸核运行应用 [minihomo](https://github.com/bestruirui/minihomo)
+My own bare metal application for Windows [minihomo](https://github.com/bestruirui/minihomo)
 
-- 下载[base.yaml](./doc/base.yaml)
-- 将文件中对应的链接改为自己的即可
+- Download [base.yaml](./doc/base.yaml)
+- Replace the corresponding links in the file with your own.
 
-例如:
+For example:
 
 ```yaml
 proxy-providers:
   ProviderALL:
-    url: https:// #将此处替换为自己的链接
+    url: https:// # Replace this with your own link
     type: http
     interval: 600
     proxy: DIRECT
@@ -98,4 +110,4 @@ proxy-providers:
       url: http://www.google.com/generate_204
       interval: 60
     path: ./proxy_provider/ALL.yaml
-```
+``` 
