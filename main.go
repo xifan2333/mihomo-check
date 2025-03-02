@@ -255,6 +255,8 @@ func proxyAliveTask(task interface{}) (interface{}, error) {
 			checker.NetflixTest()
 		case "disney":
 			checker.DisneyTest()
+		case "speed":
+			checker.CheckSpeed()
 		}
 	}
 	return proxy, nil
@@ -272,12 +274,27 @@ func proxyRenameTask(task interface{}) (interface{}, error) {
 			proxy.CountryCodeFromApi()
 		}
 	}
+	name := fmt.Sprintf("%v %03d", proxy.Info.Country, proxy.Id)
 	if config.GlobalConfig.Rename.Flag {
 		proxy.CountryFlag()
-		proxy.Raw["name"] = fmt.Sprintf("%v %v %03d", proxy.Info.Flag, proxy.Info.Country, proxy.Id)
-	} else {
-		proxy.Raw["name"] = fmt.Sprintf("%v %03d", proxy.Info.Country, proxy.Id)
+		name = fmt.Sprintf("%v %v", proxy.Info.Flag, name)
 	}
+
+	if utils.Contains(config.GlobalConfig.Check.Items, "speed") {
+		speed := proxy.Info.Speed
+		var speedStr string
+		switch {
+		case speed < 1024:
+			speedStr = fmt.Sprintf("%d KB/s", speed)
+		case speed < 1024*1024:
+			speedStr = fmt.Sprintf("%.2f MB/s", float64(speed)/1024)
+		default:
+			speedStr = fmt.Sprintf("%.2f GB/s", float64(speed)/(1024*1024))
+		}
+		name = fmt.Sprintf("%v|⬇️ %s", name, speedStr)
+	}
+
+	proxy.Raw["name"] = name
 	return proxy, nil
 }
 func checkConfig() {

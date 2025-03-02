@@ -29,7 +29,12 @@ func NewConfigSaver(results []info.Proxy) *ConfigSaver {
 			{
 				Name:    "all.yaml",
 				Proxies: make([]map[string]any, 0),
-				Filter:  func(result info.Proxy) bool { return true },
+				Filter: func(result info.Proxy) bool {
+					if utils.Contains(config.GlobalConfig.Check.Items, "speed") {
+						return result.Info.Speed > config.GlobalConfig.Check.MinSpeed
+					}
+					return true
+				},
 			},
 			{
 				Name:    "openai.yaml",

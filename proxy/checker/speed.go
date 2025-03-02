@@ -8,15 +8,15 @@ import (
 	"github.com/bestruirui/bestsub/config"
 )
 
-func CheckSpeed(httpClient *http.Client) (int, error) {
+func (c *Checker) CheckSpeed() {
 	speedClient := &http.Client{
 		Timeout:   time.Duration(config.GlobalConfig.Check.DownloadTimeout) * time.Second,
-		Transport: httpClient.Transport,
+		Transport: c.Proxy.Client.Transport,
 	}
 
 	resp, err := speedClient.Get(config.GlobalConfig.Check.SpeedTestUrl)
 	if err != nil {
-		return 0, err
+		return
 	}
 	defer resp.Body.Close()
 
@@ -40,12 +40,12 @@ func CheckSpeed(httpClient *http.Client) (int, error) {
 			if totalBytes > 0 {
 				break
 			}
-			return 0, err
+			return
 		}
 	}
 
 	if firstRead {
-		return 0, nil
+		return
 	}
 
 	duration := time.Since(startTime).Milliseconds()
@@ -53,7 +53,6 @@ func CheckSpeed(httpClient *http.Client) (int, error) {
 		duration = 1
 	}
 
-	speed := int(float64(totalBytes) / 1024 * 1000 / float64(duration))
+	c.Proxy.Info.Speed = int(float64(totalBytes) / 1024 * 1000 / float64(duration))
 
-	return speed, nil
 }
