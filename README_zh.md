@@ -53,11 +53,12 @@
 
 ```bash
 docker run -itd \
-    --name mihomo-check \
+    --name bestsub \
+    -p 8080:8080 \
     -v /path/to/config:/app/config \
     -v /path/to/output:/app/output \
     --restart=always \
-    ghcr.io/bestruirui/subs-check
+    ghcr.io/bestruirui/bestsub
 ```
 
 ### 源码直接运行
@@ -65,6 +66,10 @@ docker run -itd \
 ```bash
 go run main.go -f /path/to/config.yaml
 ```
+
+### 配置文件详解
+
+[配置文件详解](./doc/config_zh.md)
 
 ### 二进制文件运行
 
@@ -80,14 +85,14 @@ go run main.go -f /path/to/config.yaml
 speed-test-url: https://your-worker-url/speedtest?bytes=1000000
 ```
 
-## 保存方法配置
+### 保存方法配置
 
 - 📁 本地保存：将结果保存到本地，默认保存到可执行文件目录下的 output 文件夹
 - ☁️ r2：将结果保存到 Cloudflare R2 存储桶 [配置方法](./doc/r2_zh.md)
 - 💾 gist：将结果保存到 GitHub Gist [配置方法](./doc/gist_zh.md)
 - 🌐 webdav：将结果保存到 webdav 服务器 [配置方法](./doc/webdav_zh.md)
 
-## 订阅使用方法
+### 订阅使用方法
 
 推荐直接裸核运行 tun 模式
 

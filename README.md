@@ -53,11 +53,12 @@
 
 ```bash
 docker run -itd \
-    --name mihomo-check \
+    --name bestsub \
+    -p 8080:8080 \
     -v /path/to/config:/app/config \
     -v /path/to/output:/app/output \
     --restart=always \
-    ghcr.io/bestruirui/subs-check
+    ghcr.io/bestruirui/bestsub
 ```
 
 ### Run from Source Code
@@ -65,6 +66,9 @@ docker run -itd \
 ```bash
 go run main.go -f /path/to/config.yaml
 ```
+### Config Description
+
+[Config Description](./doc/config.md)
 
 ### Run Binary File
 
@@ -80,14 +84,14 @@ Just run it, and a configuration file will be generated in the current directory
 speed-test-url: https://your-worker-url/speedtest?bytes=1000000
 ```
 
-## Save Method Configuration
+### Save Method Configuration
 
 - 📁 Local Save: Save results locally, default to the output folder in the executable file directory.
 - ☁️ r2: Save results to Cloudflare R2 bucket [Configuration Method](./doc/r2.md)
 - 💾 gist: Save results to GitHub Gist [Configuration Method](./doc/gist.md)
 - 🌐 webdav: Save results to webdav server [Configuration Method](./doc/webdav.md)
 
-## Subscription Usage Method
+### Subscription Usage Method
 
 It is recommended to run in bare metal mode directly.
 
