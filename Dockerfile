@@ -1,13 +1,13 @@
-FROM golang:alpine AS builder
+FROM golang:bookworm AS builder
 WORKDIR /app
 COPY . .
 RUN go mod tidy && go build -o main .
 
-FROM alpine
+FROM debian:bookworm
 ENV TZ=Asia/Shanghai
-RUN apk add --no-cache alpine-conf ca-certificates  && \
-    /usr/sbin/setup-timezone -z Asia/Shanghai && \
-    apk del alpine-conf && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && apt-get install -y ca-certificates tzdata && \
+    ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata && \
+    rm -rf /var/cache/apt/*
 COPY --from=builder /app/main /app/main
 CMD /app/main
