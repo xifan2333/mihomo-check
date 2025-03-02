@@ -23,7 +23,7 @@ type providersResponse struct {
 	} `json:"providers"`
 }
 
-func makeRequest(client httpClient, method, url string) ([]byte, error) {
+func makeRequest(method, url string) ([]byte, error) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request failed: %w", err)
@@ -31,7 +31,7 @@ func makeRequest(client httpClient, method, url string) ([]byte, error) {
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", config.GlobalConfig.MihomoApiSecret))
 
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("execute request failed: %w", err)
 	}
@@ -58,30 +58,22 @@ func UpdateSubs() {
 		return
 	}
 
-	version, err := getVersion(http.DefaultClient)
-	if err != nil {
-		LogError("get version failed: %v", err)
-		return
-	}
-
-	LogInfo("Mihomo version: %s", version)
-
-	names, err := getNeedUpdateNames(http.DefaultClient)
+	names, err := getNeedUpdateNames()
 	if err != nil {
 		LogError("get need update subs failed: %v", err)
 		return
 	}
 
-	if err := updateSubs(http.DefaultClient, names); err != nil {
+	if err := updateSubs(names); err != nil {
 		LogError("update subs failed: %v", err)
 		return
 	}
 	LogInfo("subs updated")
 }
 
-func getVersion(client httpClient) (string, error) {
+func GetVersion() (string, error) {
 	url := fmt.Sprintf("%s/version", config.GlobalConfig.MihomoApiUrl)
-	body, err := makeRequest(client, http.MethodGet, url)
+	body, err := makeRequest(http.MethodGet, url)
 	if err != nil {
 		return "", err
 	}
@@ -93,9 +85,9 @@ func getVersion(client httpClient) (string, error) {
 	return version.Version, nil
 }
 
-func getNeedUpdateNames(client httpClient) ([]string, error) {
+func getNeedUpdateNames() ([]string, error) {
 	url := fmt.Sprintf("%s/providers/proxies", config.GlobalConfig.MihomoApiUrl)
-	body, err := makeRequest(client, http.MethodGet, url)
+	body, err := makeRequest(http.MethodGet, url)
 	if err != nil {
 		return nil, err
 	}
@@ -114,10 +106,10 @@ func getNeedUpdateNames(client httpClient) ([]string, error) {
 	return names, nil
 }
 
-func updateSubs(client httpClient, names []string) error {
+func updateSubs(names []string) error {
 	for _, name := range names {
 		url := fmt.Sprintf("%s/providers/proxies/%s", config.GlobalConfig.MihomoApiUrl, name)
-		if _, err := makeRequest(client, http.MethodPut, url); err != nil {
+		if _, err := makeRequest(http.MethodPut, url); err != nil {
 			LogError("update sub %s failed: %v", name, err)
 		}
 		LogInfo("update sub %s success", name)

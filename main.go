@@ -168,6 +168,7 @@ func (app *App) Run() {
 
 	for {
 		maintask()
+		utils.UpdateSubs()
 		nextCheck := time.Now().Add(time.Duration(app.interval) * time.Minute)
 		utils.LogInfo("next check time: %v", nextCheck.Format("2006-01-02 15:04:05"))
 		time.Sleep(time.Duration(app.interval) * time.Minute)
@@ -360,5 +361,14 @@ func checkConfig() {
 		utils.LogInfo("check items: none")
 	} else {
 		utils.LogInfo("check items: %v", config.GlobalConfig.Check.Items)
+	}
+	if config.GlobalConfig.MihomoApiUrl != "" {
+		version, err := utils.GetVersion()
+		if err != nil {
+			utils.LogError("get version failed: %v", err)
+		} else {
+			utils.LogInfo("auto update provider: true")
+			utils.LogInfo("mihomo version: %v", version)
+		}
 	}
 }
