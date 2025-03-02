@@ -51,8 +51,16 @@ func deduplicateTask(task interface{}) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("task is not a map[string]any")
 	}
-	server, serverOk := proxy["server"].(string)
+	server, serverOk := "", false
+	if proxy["type"] == "vless" || proxy["type"] == "vmess" {
+		if server, serverOk = proxy["servername"].(string); !serverOk {
+			server, serverOk = proxy["server"].(string)
+		}
+	} else {
+		server, serverOk = proxy["server"].(string)
+	}
 	port, portOk := proxy["port"].(int)
+
 	if !serverOk || !portOk {
 		return nil, fmt.Errorf("server or port is not a string or int")
 	}
