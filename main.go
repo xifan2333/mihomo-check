@@ -19,6 +19,7 @@ import (
 )
 
 type App struct {
+	renamePath  string
 	configPath  string
 	interval    int
 	watcher     *fsnotify.Watcher
@@ -27,10 +28,12 @@ type App struct {
 
 func NewApp() *App {
 	configPath := flag.String("f", "", "config file path")
+	renamePath := flag.String("r", "", "rename file path")
 	flag.Parse()
 
 	return &App{
 		configPath: *configPath,
+		renamePath: *renamePath,
 	}
 }
 
@@ -42,35 +45,32 @@ func (app *App) Initialize() error {
 	if err := app.loadConfig(); err != nil {
 		return fmt.Errorf("load config failed: %w", err)
 	}
-
+	checkConfig()
 	if err := app.initConfigWatcher(); err != nil {
 		return fmt.Errorf("init config watcher failed: %w", err)
 	}
-	if config.GlobalConfig.Proxy.Type == "http" {
-		utils.LogInfo("use http proxy: %s", config.GlobalConfig.Proxy.Address)
-	} else if config.GlobalConfig.Proxy.Type == "socks" {
-		utils.LogInfo("use socks proxy: %s", config.GlobalConfig.Proxy.Address)
-	} else {
-		utils.LogInfo("not use proxy")
-	}
-	app.interval = config.GlobalConfig.CheckInterval
+
+	app.interval = config.GlobalConfig.Check.Interval
 	log.SetLevel(log.ERROR)
-	if config.GlobalConfig.SaveMethod == "http" {
+	if config.GlobalConfig.Save.Method == "http" {
 		saver.StartHTTPServer()
 	}
 	return nil
 }
 
 func (app *App) initConfigPath() error {
-	if app.configPath == "" {
-		execPath := utils.GetExecutablePath()
-		configDir := filepath.Join(execPath, "config")
+	execPath := utils.GetExecutablePath()
+	configDir := filepath.Join(execPath, "config")
 
+	if app.configPath == "" {
 		if err := os.MkdirAll(configDir, 0755); err != nil {
 			return fmt.Errorf("create config dir failed: %w", err)
 		}
 
 		app.configPath = filepath.Join(configDir, "config.yaml")
+	}
+	if app.renamePath == "" {
+		app.renamePath = filepath.Join(configDir, "rename.yaml")
 	}
 	return nil
 }
@@ -89,6 +89,9 @@ func (app *App) loadConfig() error {
 	}
 
 	utils.LogInfo("read config file success")
+
+	info.CountryCodeRegexInit(app.renamePath)
+
 	return nil
 }
 
@@ -135,7 +138,7 @@ func (app *App) initConfigWatcher() error {
 							utils.LogError("reload config file failed: %v", err)
 							return
 						}
-						app.interval = config.GlobalConfig.CheckInterval
+						app.interval = config.GlobalConfig.Check.Interval
 					}()
 				}
 			case err, ok := <-watcher.Errors:
@@ -163,8 +166,6 @@ func (app *App) Run() {
 		}
 	}()
 
-	utils.LogInfo("progress display: %v", config.GlobalConfig.PrintProgress)
-
 	for {
 		maintask()
 		nextCheck := time.Now().Add(time.Duration(app.interval) * time.Minute)
@@ -190,18 +191,18 @@ func maintask() {
 	if err != nil {
 	}
 
-	utils.LogInfo("get proxies success: %v", len(proxies))
+	utils.LogInfo("get proxies success: %v proxies", len(proxies))
 
 	proxies = info.DeduplicateProxies(proxies)
 
-	utils.LogInfo("deduplicate proxies: %v", len(proxies))
+	utils.LogInfo("deduplicate proxies: %v proxies", len(proxies))
 
 	proxyTasks := make([]interface{}, len(proxies))
 	for i, proxy := range proxies {
 		proxyTasks[i] = proxy
 	}
 
-	pool := utils.NewThreadPool(config.GlobalConfig.Concurrent, proxyAliveTask)
+	pool := utils.NewThreadPool(config.GlobalConfig.Check.Concurrent, proxyAliveTask)
 	pool.Start()
 	pool.AddTaskArgs(proxyTasks)
 	pool.Wait()
@@ -219,33 +220,32 @@ func maintask() {
 			successProxies = append(successProxies, *proxy)
 		}
 	}
-	utils.LogInfo("success proxies: %v", success)
 
-	proxyTasks = make([]interface{}, len(successProxies))
+	renameTasks := make([]interface{}, len(successProxies))
 	for i, proxy := range successProxies {
-		proxyTasks[i] = proxy
+		renameTasks[i] = proxy
 	}
-	pool = utils.NewThreadPool(config.GlobalConfig.Concurrent, proxyRenameTask)
+	pool = utils.NewThreadPool(config.GlobalConfig.Check.Concurrent, proxyRenameTask)
 	pool.Start()
-	pool.AddTaskArgs(proxyTasks)
+	pool.AddTaskArgs(renameTasks)
 	pool.Wait()
-	results = pool.GetResults()
-	var resultProxies []map[string]any
-	for _, result := range results {
+	renameResults := pool.GetResults()
+	var renamedProxies []info.Proxy
+	for _, result := range renameResults {
 		if result.Err != nil {
 			continue
 		}
 		proxy := result.Result.(info.Proxy)
-		resultProxies = append(resultProxies, proxy.Raw)
+		renamedProxies = append(renamedProxies, proxy)
 	}
-	utils.LogInfo("rename end")
-	saver.SaveConfig(successProxies)
+	utils.LogInfo("check and rename end %v proxies", len(renamedProxies))
+	saver.SaveConfig(renamedProxies)
 }
 func proxyAliveTask(task interface{}) (interface{}, error) {
 	proxy := proxy.NewProxy(task.(map[string]any))
 	checker := checker.NewChecker(proxy)
 	checker.AliveTest("https://gstatic.com/generate_204", 204)
-	for _, item := range config.GlobalConfig.CheckItems {
+	for _, item := range config.GlobalConfig.Check.Items {
 		switch item {
 		case "openai":
 			checker.OpenaiTest()
@@ -261,12 +261,87 @@ func proxyAliveTask(task interface{}) (interface{}, error) {
 }
 func proxyRenameTask(task interface{}) (interface{}, error) {
 	proxy := task.(info.Proxy)
-	if config.GlobalConfig.RenameMethod == "api" {
+	switch config.GlobalConfig.Rename.Method {
+	case "api":
 		proxy.CountryCodeFromApi()
+	case "regex":
+		proxy.CountryCodeRegex()
+	case "mix":
+		proxy.CountryCodeRegex()
+		if proxy.Info.Country == "UN" {
+			proxy.CountryCodeFromApi()
+		}
+	}
+	if config.GlobalConfig.Rename.Flag {
 		proxy.CountryFlag()
-		name := fmt.Sprintf("%v %v %03d", proxy.Info.Flag, proxy.Info.Country, proxy.Id)
-		proxy.Raw["name"] = name
-	} else if config.GlobalConfig.RenameMethod == "match" {
+		proxy.Raw["name"] = fmt.Sprintf("%v %v %03d", proxy.Info.Flag, proxy.Info.Country, proxy.Id)
+	} else {
+		proxy.Raw["name"] = fmt.Sprintf("%v %03d", proxy.Info.Country, proxy.Id)
 	}
 	return proxy, nil
+}
+func checkConfig() {
+	if config.GlobalConfig.Check.Concurrent <= 0 {
+		utils.LogError("concurrent must be greater than 0")
+		os.Exit(1)
+	}
+	utils.LogInfo("concurrents: %v", config.GlobalConfig.Check.Concurrent)
+	switch config.GlobalConfig.Save.Method {
+	case "webdav":
+		if config.GlobalConfig.Save.WebDAVURL == "" {
+			utils.LogError("webdav-url is required when save-method is webdav")
+			os.Exit(1)
+		} else {
+			utils.LogInfo("save method: webdav")
+		}
+	case "http":
+		if config.GlobalConfig.Save.Port <= 0 {
+			utils.LogError("port must be greater than 0 when save-method is http")
+			os.Exit(1)
+		} else {
+			utils.LogInfo("save method: http")
+		}
+	case "gist":
+		if config.GlobalConfig.Save.GithubGistID == "" {
+			utils.LogError("github-gist-id is required when save-method is gist")
+			os.Exit(1)
+		}
+		if config.GlobalConfig.Save.GithubToken == "" {
+			utils.LogError("github-token is required when save-method is gist")
+			os.Exit(1)
+		}
+		utils.LogInfo("save method: gist")
+	}
+	if config.GlobalConfig.SubUrls == nil {
+		utils.LogError("sub-urls is required")
+		os.Exit(1)
+	}
+	switch config.GlobalConfig.Rename.Method {
+	case "api":
+		utils.LogInfo("rename method: api")
+	case "regex":
+		utils.LogInfo("rename method: regex")
+	case "mix":
+		utils.LogInfo("rename method: mix")
+	default:
+		utils.LogError("rename-method must be one of api, regex, mix")
+		os.Exit(1)
+	}
+	if config.GlobalConfig.Proxy.Type == "http" {
+		utils.LogInfo("proxy type: http")
+	} else if config.GlobalConfig.Proxy.Type == "socks" {
+		utils.LogInfo("proxy type: socks")
+	} else {
+		utils.LogInfo("not use proxy")
+	}
+	utils.LogInfo("progress display: %v", config.GlobalConfig.PrintProgress)
+	if config.GlobalConfig.Check.Interval < 10 {
+		utils.LogError("check-interval must be greater than 10 minutes")
+		os.Exit(1)
+	}
+	if len(config.GlobalConfig.Check.Items) == 0 {
+		utils.LogInfo("check items: none")
+	} else {
+		utils.LogInfo("check items: %v", config.GlobalConfig.Check.Items)
+	}
 }

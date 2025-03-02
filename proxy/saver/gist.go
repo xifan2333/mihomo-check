@@ -36,14 +36,14 @@ type GistUploader struct {
 }
 
 func NewGistUploader() *GistUploader {
-	if config.GlobalConfig.GithubAPIMirror != "" {
-		gistAPIURL = config.GlobalConfig.GithubAPIMirror + "/gists"
+	if config.GlobalConfig.Save.GithubAPIMirror != "" {
+		gistAPIURL = config.GlobalConfig.Save.GithubAPIMirror + "/gists"
 	}
 
 	return &GistUploader{
 		client:   utils.NewHTTPClient(),
-		token:    config.GlobalConfig.GithubToken,
-		id:       config.GlobalConfig.GithubGistID,
+		token:    config.GlobalConfig.Save.GithubToken,
+		id:       config.GlobalConfig.Save.GithubGistID,
 		isPublic: false,
 	}
 }
@@ -54,10 +54,10 @@ func UploadToGist(yamlData []byte, filename string) error {
 }
 
 func ValiGistConfig() error {
-	if config.GlobalConfig.GithubToken == "" {
+	if config.GlobalConfig.Save.GithubToken == "" {
 		return fmt.Errorf("github token is not configured")
 	}
-	if config.GlobalConfig.GithubGistID == "" {
+	if config.GlobalConfig.Save.GithubGistID == "" {
 		return fmt.Errorf("gist id is not configured")
 	}
 	return nil

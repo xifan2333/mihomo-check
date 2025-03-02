@@ -4,33 +4,42 @@ type ProxyConfig struct {
 	Type    string `yaml:"type"`
 	Address string `yaml:"address"`
 }
+type RenameConfig struct {
+	Method string `yaml:"method"`
+	Flag   bool   `yaml:"flag"`
+}
+type SaveConfig struct {
+	Method          string `yaml:"method"`
+	Port            int    `yaml:"port"`
+	WebDAVURL       string `yaml:"webdav-url"`
+	WebDAVUsername  string `yaml:"webdav-username"`
+	WebDAVPassword  string `yaml:"webdav-password"`
+	GithubToken     string `yaml:"github-token"`
+	GithubGistID    string `yaml:"github-gist-id"`
+	GithubAPIMirror string `yaml:"github-api-mirror"`
+	WorkerURL       string `yaml:"worker-url"`
+	WorkerToken     string `yaml:"worker-token"`
+}
+type CheckConfig struct {
+	Concurrent      int      `yaml:"concurrent"`
+	Items           []string `yaml:"items"`
+	Interval        int      `yaml:"interval"`
+	Timeout         int      `yaml:"timeout"`
+	MinSpeed        int      `yaml:"min-speed"`
+	QualityLevel    int      `yaml:"quality-level"`
+	DownloadTimeout int      `yaml:"download-timeout"`
+	SpeedTestUrl    string   `yaml:"speed-test-url"`
+}
 type Config struct {
-	Port            int         `yaml:"port"`
-	CheckItems      []string    `yaml:"check-items"`
-	PrintProgress   bool        `yaml:"print-progress"`
-	Concurrent      int         `yaml:"concurrent"`
-	CheckInterval   int         `yaml:"check-interval"`
-	QualityLevel    int         `yaml:"quality-level"`
-	SpeedTestUrl    string      `yaml:"speed-test-url"`
-	DownloadTimeout int         `yaml:"download-timeout"`
-	MinSpeed        int         `yaml:"min-speed"`
-	Timeout         int         `yaml:"timeout"`
-	FilterRegex     string      `yaml:"filter-regex"`
-	SaveMethod      string      `yaml:"save-method"`
-	WebDAVURL       string      `yaml:"webdav-url"`
-	WebDAVUsername  string      `yaml:"webdav-username"`
-	WebDAVPassword  string      `yaml:"webdav-password"`
-	GithubToken     string      `yaml:"github-token"`
-	GithubGistID    string      `yaml:"github-gist-id"`
-	GithubAPIMirror string      `yaml:"github-api-mirror"`
-	WorkerURL       string      `yaml:"worker-url"`
-	WorkerToken     string      `yaml:"worker-token"`
-	SubUrlsReTry    int         `yaml:"sub-urls-retry"`
-	SubUrls         []string    `yaml:"sub-urls"`
-	MihomoApiUrl    string      `yaml:"mihomo-api-url"`
-	MihomoApiSecret string      `yaml:"mihomo-api-secret"`
-	Proxy           ProxyConfig `yaml:"proxy"`
-	RenameMethod    string      `yaml:"rename-method"`
+	Check           CheckConfig  `yaml:"check"`
+	PrintProgress   bool         `yaml:"print-progress"`
+	Save            SaveConfig   `yaml:"save"`
+	SubUrlsReTry    int          `yaml:"sub-urls-retry"`
+	SubUrls         []string     `yaml:"sub-urls"`
+	MihomoApiUrl    string       `yaml:"mihomo-api-url"`
+	MihomoApiSecret string       `yaml:"mihomo-api-secret"`
+	Proxy           ProxyConfig  `yaml:"proxy"`
+	Rename          RenameConfig `yaml:"rename"`
 }
 
 var GlobalConfig Config

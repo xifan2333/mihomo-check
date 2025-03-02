@@ -31,13 +31,13 @@ func myLog(level LogLevel, format string, v ...any) {
 		levelStr = "WARN"
 		color = WarnColor
 	case LogLevelError:
-		levelStr = "ERROR"
+		levelStr = "ERRO"
 		color = ErrorColor
 	case LogLevelFatal:
-		levelStr = "FATAL"
+		levelStr = "FATA"
 		color = ErrorColor
 	default:
-		levelStr = "UNKNOWN"
+		levelStr = "UNKN"
 	}
 	fmt.Printf("%s%s%s [%s] %s \n", color, levelStr, ResetColor, time.Now().Format("2006-01-02T15:04:05"), fmt.Sprintf(format, v...))
 }

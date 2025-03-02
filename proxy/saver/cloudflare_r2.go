@@ -31,8 +31,8 @@ type R2Uploader struct {
 func NewR2Uploader() *R2Uploader {
 	return &R2Uploader{
 		client:    utils.NewHTTPClient(),
-		workerURL: config.GlobalConfig.WorkerURL,
-		token:     config.GlobalConfig.WorkerToken,
+		workerURL: config.GlobalConfig.Save.WorkerURL,
+		token:     config.GlobalConfig.Save.WorkerToken,
 	}
 }
 
@@ -42,10 +42,10 @@ func UploadToR2Storage(yamlData []byte, filename string) error {
 }
 
 func ValiR2Config() error {
-	if config.GlobalConfig.WorkerURL == "" {
+	if config.GlobalConfig.Save.WorkerURL == "" {
 		return fmt.Errorf("worker url is not configured")
 	}
-	if config.GlobalConfig.WorkerToken == "" {
+	if config.GlobalConfig.Save.WorkerToken == "" {
 		return fmt.Errorf("worker token is not configured")
 	}
 	return nil

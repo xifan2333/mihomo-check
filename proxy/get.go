@@ -21,7 +21,7 @@ func GetProxies() ([]map[string]any, error) {
 	for i, url := range config.GlobalConfig.SubUrls {
 		subUrls[i] = url
 	}
-	numWorkers := min(len(subUrls), config.GlobalConfig.Concurrent)
+	numWorkers := min(len(subUrls), config.GlobalConfig.Check.Concurrent)
 
 	pool := utils.NewThreadPool(numWorkers, taskGetProxies)
 	pool.Start()

@@ -26,9 +26,9 @@ type WebDAVUploader struct {
 func NewWebDAVUploader() *WebDAVUploader {
 	return &WebDAVUploader{
 		client:   utils.NewHTTPClient(),
-		baseURL:  config.GlobalConfig.WebDAVURL,
-		username: config.GlobalConfig.WebDAVUsername,
-		password: config.GlobalConfig.WebDAVPassword,
+		baseURL:  config.GlobalConfig.Save.WebDAVURL,
+		username: config.GlobalConfig.Save.WebDAVUsername,
+		password: config.GlobalConfig.Save.WebDAVPassword,
 	}
 }
 
@@ -38,13 +38,13 @@ func UploadToWebDAV(yamlData []byte, filename string) error {
 }
 
 func ValiWebDAVConfig() error {
-	if config.GlobalConfig.WebDAVURL == "" {
+	if config.GlobalConfig.Save.WebDAVURL == "" {
 		return fmt.Errorf("webdav URL is not configured")
 	}
-	if config.GlobalConfig.WebDAVUsername == "" {
+	if config.GlobalConfig.Save.WebDAVUsername == "" {
 		return fmt.Errorf("webdav username is not configured")
 	}
-	if config.GlobalConfig.WebDAVPassword == "" {
+	if config.GlobalConfig.Save.WebDAVPassword == "" {
 		return fmt.Errorf("webdav password is not configured")
 	}
 	return nil

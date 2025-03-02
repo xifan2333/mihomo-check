@@ -104,7 +104,7 @@ func (cs *ConfigSaver) saveCategory(category ProxyCategory) error {
 }
 
 func chooseSaveMethod() func([]byte, string) error {
-	switch config.GlobalConfig.SaveMethod {
+	switch config.GlobalConfig.Save.Method {
 	case "r2":
 		if err := ValiR2Config(); err != nil {
 			utils.LogError("R2 config is incomplete: %v ,use local save", err)
@@ -132,7 +132,7 @@ func chooseSaveMethod() func([]byte, string) error {
 		}
 		return SaveToHTTP
 	default:
-		utils.LogError("unknown save method: %s, use local save", config.GlobalConfig.SaveMethod)
+		utils.LogError("unknown save method: %s, use local save", config.GlobalConfig.Save.Method)
 		return SaveToLocal
 	}
 }

@@ -2,10 +2,16 @@ package info
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/bestruirui/bestsub/utils"
+	"github.com/dlclark/regexp2"
+	"gopkg.in/yaml.v3"
 )
 
 func (p *Proxy) CountryCodeFromApi() {
@@ -108,12 +114,41 @@ func (p *Proxy) CountryFlag() {
 	p.Info.Flag = getFlag(p.Info.Country)
 }
 
-// func (p *Proxy) CountryCodeFromYaml() {
-// 	yamlFile, err := os.Open("countries.yaml")
-// 	if err != nil {
-// 		fmt.Println("Error opening YAML file:", err)
-// 		return
-// 	}
-// 	defer yamlFile.Close()
+type Country struct {
+	Name        string `yaml:"name"`
+	Recognition string `yaml:"recognition"`
+}
 
-// }
+var CountryCodeRegex []Country
+
+func CountryCodeRegexInit(renamePath string) {
+	data, err := os.ReadFile(renamePath)
+	if err != nil {
+		utils.LogError("read rename file failed: %v", err)
+		utils.LogInfo("please download rename file from https://github.com/bestruirui/BestSub/tree/master/doc/rename.yaml")
+		os.Exit(1)
+	}
+
+	err = yaml.Unmarshal(data, &CountryCodeRegex)
+	if err != nil {
+		utils.LogError("parse rename file failed: %v", err)
+		utils.LogInfo("please download rename file from https://github.com/bestruirui/BestSub/tree/master/doc/rename.yaml")
+		os.Exit(1)
+	}
+}
+
+func (p *Proxy) CountryCodeRegex() {
+	for _, country := range CountryCodeRegex {
+		re := regexp2.MustCompile(country.Recognition, regexp2.None)
+		match, err := re.MatchString(p.Raw["name"].(string))
+		if err != nil {
+			fmt.Printf("Regex match error: %v\n", err)
+			continue
+		}
+		if match {
+			p.Info.Country = country.Name
+			return
+		}
+	}
+	p.Info.Country = "UN"
+}

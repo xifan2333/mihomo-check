@@ -1,83 +1,64 @@
 
-# 是否显示进度
+# 是否打印进度 
 print-progress: false
 
-# 并发线程数
-concurrent: 200
+rename:
+  # 重命名方法 api 或 regex 或 mix
+  method: mix
+  # 是否显示旗帜信息
+  flag: false
 
-# 端口
-port: 8080
+check:
+  # 并发
+  concurrent: 100
+  # 检查间隔,单位分钟
+  interval: 10
+  # 超时时间 单位毫秒
+  timeout: 2000
+  # 最低测速 单位KB/s
+  min-speed: 2048
+  # 下载测试超时时间(s)
+  download-timeout: 10
+  # 测速地址
+  speed-test-url: https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v3.121.12-beta/Update-W2xEX-v3.121.12-beta-FROM-v3.121.01.7z
+  # 检查项目
+  items:
+    - openai
+    - youtube
+    - netflix
+    - disney
 
-# 检查项目
-check-items:
-  - openai
-  - youtube
-  - netflix
-  - disney
-  
-# 检查间隔(分钟)
-check-interval: 30
+save:
+  # 保存方法 webdav 或 http 或 gist 或 r2
+  method: webdav
+  # 保存端口
+  port: 8080
+  # webdav
+  webdav-url: "https://webdav.company/dav"
+  webdav-username: "username"
+  webdav-password: "password"
+  # github token
+  github-token: ""
+  # gist id
+  github-gist-id: ""
+  # github api mirror
+  github-api-mirror: "https://your-worker-url.com/github"
+  #worker-url
+  worker-url: https://your-worker-url.com
+  #worker-token
+  worker-token: your-worker-token
 
-# 超时时间(毫秒)(节点的最大延迟)
-timeout: 5000
-
-# 质量等级，等级越高，稳定性越高，等级过高可能导致筛选出来的节点数量过少
-quality-level: 1
-
-# 测速地址(注意 并发数*节点速度<最大网速 否则测速结果不准确)
-# 尽量不要使用Speedtest，Cloudflare提供的下载链接，因为很多节点屏蔽测速网站
-# 建议使用自己上传到Cloudflare R2的文件
-# 如不需要设置测速地址，请将 speed-test-url 设置为 ""
-speed-test-url: https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v2.21.12/Waifu2x-Extension-GUI-v2.21.12-Portable.7z
-
-# 最低测速结果舍弃(KB/s)
-min-speed: 1024
-
-# 下载测试时间(s)(与下载链接大小相关，默认最大测试10s)
-download-timeout: 10
-
-
-# mihomo api url(测试完成后自动更新mihomo订阅)
-mihomo-api-url: ""
-
+# mihomo api
+mihomo-api-url: "http://192.168.31.11:9090"
 # mihomo api secret
 mihomo-api-secret: ""
-
-# 保存方法
-# 目前支持的保存方法: r2, local, gist, webdav
-save-method: local
-
-# webdav
-webdav-url: "https://example.com/dav/"
-webdav-username: "admin"
-webdav-password: "admin"
-
-# gist id
-github-gist-id: ""
-
-# github token
-github-token: ""
-
-# github api mirror
-github-api-mirror: ""
-
-# 将测速结果推送到Worker的地址
-worker-url: https://example.worker.dev
-
-# Worker令牌
-worker-token: 1234567890
-
-# 重试次数(获取订阅失败后重试次数)
+# 重试次数
 sub-urls-retry: 3
-
-# 代理设置,此代理仅用于获取订阅链接,和上传保存(并不用于节点测试等相关)
-# 支持 http 和 socks 代理
-# 如不需要设置代理，请将 type 设置为 ""
+# 代理设置 支持 http 和 socks 代理
 proxy:
-  type: "http" # 可选值: http, socks，如果不需要设置代理，请将 type 设置为 ""
-  address: "http://localhost:8080" # 代理地址
-
-# 订阅地址 支持 clash/mihomo/v2ray/base64 格式的订阅链接
+  type: "http" # 可选值: http, socks
+  address: "http://192.168.31.11:7890" # 代理地址
+# 订阅链接
 sub-urls:
-  - https://example.com/sub.txt
-  - https://example.com/sub2.txt
+  - https://example.com/sub1
+  - https://example.com/sub2

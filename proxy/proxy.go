@@ -21,7 +21,7 @@ func NewProxy(raw map[string]any) *info.Proxy {
 	return &info.Proxy{
 		Raw: raw,
 		Client: &http.Client{
-			Timeout:   time.Duration(config.GlobalConfig.Timeout) * time.Millisecond,
+			Timeout:   time.Duration(config.GlobalConfig.Check.Timeout) * time.Millisecond,
 			Transport: buildTransport(proxy),
 		},
 	}

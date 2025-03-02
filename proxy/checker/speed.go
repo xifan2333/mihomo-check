@@ -10,11 +10,11 @@ import (
 
 func CheckSpeed(httpClient *http.Client) (int, error) {
 	speedClient := &http.Client{
-		Timeout:   time.Duration(config.GlobalConfig.DownloadTimeout) * time.Second,
+		Timeout:   time.Duration(config.GlobalConfig.Check.DownloadTimeout) * time.Second,
 		Transport: httpClient.Transport,
 	}
 
-	resp, err := speedClient.Get(config.GlobalConfig.SpeedTestUrl)
+	resp, err := speedClient.Get(config.GlobalConfig.Check.SpeedTestUrl)
 	if err != nil {
 		return 0, err
 	}

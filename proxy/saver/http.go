@@ -185,7 +185,7 @@ func startHTTPServer() {
 	})
 
 	httpServer = &http.Server{
-		Addr:         fmt.Sprintf("0.0.0.0:%d", config.GlobalConfig.Port),
+		Addr:         fmt.Sprintf("0.0.0.0:%d", config.GlobalConfig.Save.Port),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -194,7 +194,7 @@ func startHTTPServer() {
 	ips := getLocalIPs()
 
 	for _, ip := range ips {
-		utils.LogInfo("http server started at http://%s:%d", ip, config.GlobalConfig.Port)
+		utils.LogInfo("http server started at http://%s:%d", ip, config.GlobalConfig.Save.Port)
 	}
 
 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {

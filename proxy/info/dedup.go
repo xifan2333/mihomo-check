@@ -17,7 +17,7 @@ func DeduplicateProxies(proxies []map[string]any) []map[string]any {
 		deduplicateTasks[i] = proxy
 	}
 
-	concurrent := min(len(deduplicateTasks), config.GlobalConfig.Concurrent)
+	concurrent := min(len(deduplicateTasks), config.GlobalConfig.Check.Concurrent)
 
 	pool := utils.NewThreadPool(concurrent, deduplicateTask)
 	pool.Start()
