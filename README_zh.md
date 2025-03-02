@@ -47,9 +47,27 @@
     - [x] http
     - [ ] 其他
 
+
+## 配置文件详解
+
+[配置文件详解](./doc/config_zh.md)
+
+
 ## 使用方法
 
 ### Docker
+
+```bash
+mkdir -p /path/to/config
+````
+
+```bash
+wget https://raw.githubusercontent.com/bestruirui/BestSub/master/doc/config.example.yaml -O /path/to/config/config.yaml
+```
+```bash
+wget https://raw.githubusercontent.com/bestruirui/BestSub/master/doc/rename.yaml -O /path/to/config/rename.yaml
+```
+
 
 ```bash
 docker run -itd \
@@ -67,13 +85,13 @@ docker run -itd \
 go run main.go -f /path/to/config.yaml
 ```
 
-### 配置文件详解
-
-[配置文件详解](./doc/config_zh.md)
 
 ### 二进制文件运行
 
-直接运行即可，会在当前目录生成配置文件
+1. 根据自己系统选择 [release](https://github.com/bestruirui/BestSub/releases) 中的文件
+2. 下载[config.example.yaml](https://raw.githubusercontent.com/bestruirui/BestSub/master/doc/config.example.yaml) 和 [rename.yaml](https://raw.githubusercontent.com/bestruirui/BestSub/master/doc/rename.yaml) 文件 到 `config` 文件夹中
+3. 按自己需求修改配置文件后，重命名为 `config.yaml`
+4. 运行即可
 
 ### 自建测速地址
 

@@ -21,17 +21,18 @@ check:
   download-timeout: 10
   # 测速地址
   speed-test-url: https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v3.121.12-beta/Update-W2xEX-v3.121.12-beta-FROM-v3.121.01.7z
-  # 检查项目
+  # 检查项目（根据需要选择）
   items:
-    - openai
-    - youtube
-    - netflix
-    - disney
+    - openai # ChatGPT Android APP 是否可用
+    - youtube # YouTube 是否可用
+    - netflix # Netflix 是否可用
+    - disney # Disney+ 是否可用
+    - speed # 测速
 
 save:
-  # 保存方法 webdav 或 http 或 gist 或 r2
+  # 保存方法 webdav 或 http 或 gist 或 r2 或 local
   method: webdav
-  # 保存端口
+  # 使用http保存方式时需要的端口
   port: 8080
   # webdav
   webdav-url: "https://webdav.company/dav"

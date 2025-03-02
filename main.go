@@ -292,7 +292,7 @@ func proxyRenameTask(task interface{}) (interface{}, error) {
 		default:
 			speedStr = fmt.Sprintf("%.2f GB/s", float64(speed)/(1024*1024))
 		}
-		name = fmt.Sprintf("%v|⬇️ %s", name, speedStr)
+		name = fmt.Sprintf("%v | ⬇️ %s", name, speedStr)
 	}
 
 	proxy.Raw["name"] = name
