@@ -53,7 +53,8 @@ func deduplicateTask(task interface{}) (interface{}, error) {
 	}
 	server, serverOk := "", false
 	if proxy["type"] == "vless" || proxy["type"] == "vmess" {
-		if server, serverOk = proxy["servername"].(string); !serverOk {
+		server, serverOk = proxy["servername"].(string)
+		if !serverOk || server == "" {
 			server, serverOk = proxy["server"].(string)
 		}
 	} else {
