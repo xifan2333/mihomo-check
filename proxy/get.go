@@ -48,6 +48,10 @@ func taskGetProxies(args interface{}) (interface{}, error) {
 	var config map[string]any
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
+		data = removeAllControlCharacters(data)
+		err = yaml.Unmarshal(data, &config)
+	}
+	if err != nil {
 		reg, _ := regexp.Compile("(ssr|ss|vmess|trojan|vless|hysteria|hy2|hysteria2)://")
 		if !reg.Match(data) {
 			data = []byte(parser.DecodeBase64(string(data)))
@@ -129,4 +133,13 @@ func getDateFromSubs(subUrl string) ([]byte, error) {
 	}
 
 	return nil, fmt.Errorf("failed after %d retries: %v", maxRetries, lastErr)
+}
+func removeAllControlCharacters(data []byte) []byte {
+	var cleanedData []byte
+	for _, b := range data {
+		if b >= 32 && b <= 126 || b == '\n' || b == '\t' || b == '\r' {
+			cleanedData = append(cleanedData, b)
+		}
+	}
+	return cleanedData
 }
