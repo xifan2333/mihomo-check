@@ -66,25 +66,27 @@ func taskGetProxies(args interface{}) (interface{}, error) {
 				mihomoProxies = append(mihomoProxies, parseProxy)
 			}
 		}
-	}
-	proxyInterface, ok := config["proxies"]
-	if !ok || proxyInterface == nil {
-		utils.LogError("subscription link: %s has no proxies", subUrl)
-		return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
-	}
-
-	proxyList, ok := proxyInterface.([]any)
-	if !ok {
-		return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
-	}
-
-	for _, proxy := range proxyList {
-		proxyMap, ok := proxy.(map[string]any)
-		if !ok {
-			continue
+	} else {
+		proxyInterface, ok := config["proxies"]
+		if !ok || proxyInterface == nil {
+			utils.LogError("subscription link: %s has no proxies", subUrl)
+			return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
 		}
-		mihomoProxies = append(mihomoProxies, proxyMap)
+
+		proxyList, ok := proxyInterface.([]any)
+		if !ok {
+			return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
+		}
+
+		for _, proxy := range proxyList {
+			proxyMap, ok := proxy.(map[string]any)
+			if !ok {
+				continue
+			}
+			mihomoProxies = append(mihomoProxies, proxyMap)
+		}
 	}
+
 	return mihomoProxies, nil
 }
 
