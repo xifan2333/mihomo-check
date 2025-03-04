@@ -1,59 +1,117 @@
-# 可用性检测
+# Subscription Merge and Conversion Detection Tool
 
-## 预览
+<div align="center">
+  <img src="https://img.shields.io/github/v/release/bestruirui/BestSub?color=blue" alt="Version">
+  <img src="https://img.shields.io/badge/Language-Go-green" alt="Language">
+  <a href="./README_zh.md">
+    <img src="https://img.shields.io/badge/中文文档-brightgreen" alt="中文文档">
+  </a>
+  <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
+</div>
+
+## Preview
 
 ![preview](./doc/images/preview.png)
 
-## 功能
+## Features
 
-- 检测节点可用性,去除不可用节点
-- 检测平台解锁情况
+- ✅ Detect node availability and remove unavailable nodes
+- ✅ Custom platform unlocking detection
     - openai
     - youtube
     - netflix
     - disney
-- 合并多个订阅
-- 节点去重
-- 节点重命名
-- 根据解锁情况分类保存
+- ✅ Merge multiple subscriptions
+- ✅ Convert subscriptions to clash/mihomo format
+- ✅ Remove duplicate nodes
+- ✅ Rename nodes
+    - API naming
+    - Custom rule naming
+- ✅ Test node speed
+- ✅ Classify and save based on unlocking status
 
-## 特点
+## Characteristics
 
-- 支持多平台
-- 支持多线程
-- 资源占用低
+- 🚀 Supports multiple platforms
+- ⚡ Supports multithreading
+- 🍃 Low resource consumption
 
 ## TODO
 
-- [ ] 适配多种订阅格式
-- [ ] 支持更多的保存方式
-    - [x] 本地
+- [x] Adapt to various subscription formats
+- [ ] Support more saving methods
+    - [x] Local
     - [x] cloudflare r2
-    - [ ] 其他
+    - [x] gist
+    - [x] webdav
+    - [x] http
+    - [ ] Others
 
-## 使用方法
+## Usage
 
 ### Docker
 
 ```bash
 docker run -itd \
-    --name mihomo-check \
+    --name bestsub \
+    -p 8080:8080 \
     -v /path/to/config:/app/config \
+    -v /path/to/output:/app/output \
     --restart=always \
-    bestrui/mihomo-check:latest
+    ghcr.io/bestruirui/bestsub
 ```
 
-### 源码直接运行
+### Run from Source Code
 
 ```bash
 go run main.go -f /path/to/config.yaml
 ```
+### Config Description
 
-### 二进制文件运行
+[Config Description](./doc/config.md)
 
-直接运行即可,会在当前目录生成配置文件
+### Run Binary File
 
-## 保存方法配置
+Just run it, and a configuration file will be generated in the current directory.
 
-- 本地保存: 将结果保存到本地,默认保存到可执行文件目录下的 output 文件夹
-- r2: 将结果保存到 cloudflare r2 存储桶 [配置方法](./doc/r2.md)
+### Self-hosted Speed Test Address
+
+- Deploy the [worker](./cloudflare/worker.js) to Cloudflare Workers
+
+- Set `speed-test-url` to your worker address
+
+```yaml
+speed-test-url: https://your-worker-url/speedtest?bytes=1000000
+```
+
+### Save Method Configuration
+
+- 📁 Local Save: Save results locally, default to the output folder in the executable file directory.
+- ☁️ r2: Save results to Cloudflare R2 bucket [Configuration Method](./doc/r2.md)
+- 💾 gist: Save results to GitHub Gist [Configuration Method](./doc/gist.md)
+- 🌐 webdav: Save results to webdav server [Configuration Method](./doc/webdav.md)
+
+### Subscription Usage Method
+
+It is recommended to run in bare metal mode directly.
+
+My own bare metal application for Windows [minihomo](https://github.com/bestruirui/minihomo)
+
+- Download [base.yaml](./doc/base.yaml)
+- Replace the corresponding links in the file with your own.
+
+For example:
+
+```yaml
+proxy-providers:
+  ProviderALL:
+    url: https:// # Replace this with your own link
+    type: http
+    interval: 600
+    proxy: DIRECT
+    health-check:
+      enable: true
+      url: http://www.google.com/generate_204
+      interval: 60
+    path: ./proxy_provider/ALL.yaml
+``` 

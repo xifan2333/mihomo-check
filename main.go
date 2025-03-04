@@ -5,113 +5,116 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sync"
 	"time"
 
-	"github.com/bestruirui/mihomo-check/check"
-	"github.com/bestruirui/mihomo-check/config"
-	"github.com/bestruirui/mihomo-check/proxy/ipinfo"
-	"github.com/bestruirui/mihomo-check/save"
-	"github.com/bestruirui/mihomo-check/utils"
+	"github.com/bestruirui/bestsub/config"
+	"github.com/bestruirui/bestsub/proxy"
+	"github.com/bestruirui/bestsub/proxy/checker"
+	"github.com/bestruirui/bestsub/proxy/info"
+	"github.com/bestruirui/bestsub/proxy/saver"
+	"github.com/bestruirui/bestsub/utils"
 	"github.com/fsnotify/fsnotify"
 	"github.com/metacubex/mihomo/log"
+	"github.com/panjf2000/ants/v2"
 	"gopkg.in/yaml.v3"
 )
 
-// App 结构体用于管理应用程序状态
 type App struct {
+	renamePath  string
 	configPath  string
 	interval    int
 	watcher     *fsnotify.Watcher
 	reloadTimer *time.Timer
-	lastReload  time.Time
 }
 
-// NewApp 创建新的应用实例
 func NewApp() *App {
-	configPath := flag.String("f", "", "配置文件路径")
+	configPath := flag.String("f", "", "config file path")
+	renamePath := flag.String("r", "", "rename file path")
 	flag.Parse()
 
 	return &App{
 		configPath: *configPath,
+		renamePath: *renamePath,
 	}
 }
 
-// Initialize 初始化应用程序
 func (app *App) Initialize() error {
-	// 初始化配置文件路径
 	if err := app.initConfigPath(); err != nil {
-		return fmt.Errorf("初始化配置文件路径失败: %w", err)
+		return fmt.Errorf("init config path failed: %w", err)
 	}
 
-	// 加载配置文件
 	if err := app.loadConfig(); err != nil {
-		return fmt.Errorf("加载配置文件失败: %w", err)
+		return fmt.Errorf("load config failed: %w", err)
 	}
-
-	// 初始化IP数据库
-	ipinfo.GetIPdb()
-
-	// 初始化配置文件监听
+	checkConfig()
 	if err := app.initConfigWatcher(); err != nil {
-		return fmt.Errorf("初始化配置文件监听失败: %w", err)
+		return fmt.Errorf("init config watcher failed: %w", err)
 	}
 
-	app.interval = config.GlobalConfig.CheckInterval
+	app.interval = config.GlobalConfig.Check.Interval
+	log.SetLevel(log.ERROR)
+	if config.GlobalConfig.Save.Method == "http" {
+		saver.StartHTTPServer()
+	}
 	return nil
 }
 
-// initConfigPath 初始化配置文件路径
 func (app *App) initConfigPath() error {
-	if app.configPath == "" {
-		execPath := utils.GetExecutablePath()
-		configDir := filepath.Join(execPath, "config")
+	execPath := utils.GetExecutablePath()
+	configDir := filepath.Join(execPath, "config")
 
+	if app.configPath == "" {
 		if err := os.MkdirAll(configDir, 0755); err != nil {
-			return fmt.Errorf("创建配置目录失败: %w", err)
+			return fmt.Errorf("create config dir failed: %w", err)
 		}
 
 		app.configPath = filepath.Join(configDir, "config.yaml")
 	}
+	if app.renamePath == "" {
+		app.renamePath = filepath.Join(configDir, "rename.yaml")
+	}
 	return nil
 }
 
-// loadConfig 加载配置文件
 func (app *App) loadConfig() error {
 	yamlFile, err := os.ReadFile(app.configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return app.createDefaultConfig()
 		}
-		return fmt.Errorf("读取配置文件失败: %w", err)
+		return fmt.Errorf("read config file failed: %w", err)
 	}
 
 	if err := yaml.Unmarshal(yamlFile, &config.GlobalConfig); err != nil {
-		return fmt.Errorf("解析配置文件失败: %w", err)
+		return fmt.Errorf("parse config file failed: %w", err)
 	}
 
-	log.Infoln("配置文件读取成功")
+	utils.LogInfo("read config file success")
+
+	info.CountryCodeRegexInit(app.renamePath)
+
 	return nil
 }
 
-// createDefaultConfig 创建默认配置文件
 func (app *App) createDefaultConfig() error {
-	log.Infoln("配置文件不存在，创建默认配置文件")
+	utils.LogInfo("config file not found, create default config file")
 
 	if err := os.WriteFile(app.configPath, []byte(config.DefaultConfigTemplate), 0644); err != nil {
-		return fmt.Errorf("写入默认配置文件失败: %w", err)
+		return fmt.Errorf("write default config file failed: %w", err)
 	}
 
-	log.Infoln("默认配置文件创建成功")
-	log.Infoln("请编辑配置文件: %v", app.configPath)
+	utils.LogInfo("default config file created")
+	utils.LogInfo("please edit config file: %v", app.configPath)
 	os.Exit(0)
 	return nil
 }
 
-// initConfigWatcher 初始化配置文件监听
 func (app *App) initConfigWatcher() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return fmt.Errorf("创建文件监听器失败: %w", err)
+		return fmt.Errorf("create file watcher failed: %w", err)
 	}
 
 	app.watcher = watcher
@@ -133,34 +136,31 @@ func (app *App) initConfigWatcher() error {
 
 					go func() {
 						<-app.reloadTimer.C
-						log.Infoln("配置文件发生变化，正在重新加载")
+						utils.LogInfo("config file changed, reloading")
 						if err := app.loadConfig(); err != nil {
-							log.Errorln("重新加载配置文件失败: %v", err)
+							utils.LogError("reload config file failed: %v", err)
 							return
 						}
-						// 更新检查间隔
-						app.interval = config.GlobalConfig.CheckInterval
+						app.interval = config.GlobalConfig.Check.Interval
 					}()
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Errorln("配置文件监听错误: %v", err)
+				utils.LogError("config file watcher error: %v", err)
 			}
 		}
 	}()
 
-	// 开始监听配置文件
 	if err := watcher.Add(app.configPath); err != nil {
-		return fmt.Errorf("添加配置文件监听失败: %w", err)
+		return fmt.Errorf("add config file watcher failed: %w", err)
 	}
 
-	log.Infoln("配置文件监听已启动")
+	utils.LogInfo("config file watcher started")
 	return nil
 }
 
-// Run 运行应用程序主循环
 func (app *App) Run() {
 	defer func() {
 		app.watcher.Close()
@@ -169,33 +169,33 @@ func (app *App) Run() {
 		}
 	}()
 
-	log.Infoln("进度展示: %v", config.GlobalConfig.PrintProgress)
-
 	for {
-		if err := app.checkProxies(); err != nil {
-			log.Errorln("检测代理失败: %v", err)
-			os.Exit(1)
-		}
-
+		maintask()
+		utils.UpdateSubs()
 		nextCheck := time.Now().Add(time.Duration(app.interval) * time.Minute)
-		log.Infoln("下次检查时间: %v", nextCheck.Format("2006-01-02 15:04:05"))
+		utils.LogInfo("next check time: %v", nextCheck.Format("2006-01-02 15:04:05"))
 		time.Sleep(time.Duration(app.interval) * time.Minute)
 	}
 }
 
-// checkProxies 执行代理检测
-func (app *App) checkProxies() error {
-	log.Infoln("开始检测代理")
+var (
+	aliveProxies   []*info.Proxy
+	renamedProxies []*info.Proxy
+	aliveMutex     sync.Mutex
+	aliveCount     int
+)
 
-	results, err := check.Check()
-	if err != nil {
-		return fmt.Errorf("检测代理失败: %w", err)
-	}
-
-	log.Infoln("检测完成")
-	save.SaveConfig(results)
-	utils.UpdateSubs()
-	return nil
+func addAliveProxy(proxy *info.Proxy) {
+	aliveMutex.Lock()
+	defer aliveMutex.Unlock()
+	proxy.Id = aliveCount
+	aliveProxies = append(aliveProxies, proxy)
+	aliveCount++
+}
+func addRenamedProxy(proxy *info.Proxy) {
+	aliveMutex.Lock()
+	defer aliveMutex.Unlock()
+	renamedProxies = append(renamedProxies, proxy)
 }
 
 func main() {
@@ -203,9 +203,197 @@ func main() {
 	app := NewApp()
 
 	if err := app.Initialize(); err != nil {
-		log.Errorln("初始化失败: %v", err)
+		utils.LogError("initialize failed: %v", err)
 		os.Exit(1)
 	}
 
 	app.Run()
+}
+func maintask() {
+	proxies, err := proxy.GetProxies()
+	if err != nil {
+		utils.LogError("get proxies failed: %v", err)
+		return
+	}
+	utils.LogInfo("get proxies success: %v proxies", len(proxies))
+	proxies = info.DeduplicateProxies(proxies)
+	utils.LogInfo("deduplicate proxies: %v proxies", len(proxies))
+
+	var wg sync.WaitGroup
+	aliveProxies = make([]*info.Proxy, 0)
+	pool, _ := ants.NewPool(config.GlobalConfig.Check.Concurrent)
+	defer pool.Release()
+
+	for _, proxy := range proxies {
+		wg.Add(1)
+		pool.Submit(func() {
+			defer wg.Done()
+			proxyCheckTask(proxy)
+		})
+	}
+	wg.Wait()
+
+	renamedProxies = make([]*info.Proxy, 0)
+	for _, proxy := range aliveProxies {
+		wg.Add(1)
+		pool.Submit(func() {
+			defer wg.Done()
+			proxyRenameTask(proxy)
+		})
+	}
+	wg.Wait()
+
+	utils.LogInfo("check and rename end %v proxies", len(renamedProxies))
+
+	saver.SaveConfig(renamedProxies)
+
+	runtime.GC()
+}
+
+func proxyCheckTask(arg map[string]any) {
+	proxy := proxy.NewProxy(arg)
+	if proxy == nil {
+		return
+	}
+	defer proxy.Close()
+	checker := checker.NewChecker(proxy)
+	defer checker.Close()
+	for i := 0; i < 3; i++ {
+		checker.AliveTest("https://gstatic.com/generate_204", 204)
+		if proxy.Info.Alive {
+			break
+		}
+	}
+	for _, item := range config.GlobalConfig.Check.Items {
+		switch item {
+		case "openai":
+			checker.OpenaiTest()
+		case "youtube":
+			checker.YoutubeTest()
+		case "netflix":
+			checker.NetflixTest()
+		case "disney":
+			checker.DisneyTest()
+		case "speed":
+			checker.CheckSpeed()
+		}
+	}
+	if proxy.Info.Alive {
+		addAliveProxy(proxy)
+	}
+}
+func proxyRenameTask(proxy *info.Proxy) {
+	proxy.New()
+	defer proxy.Close()
+	if proxy == nil {
+		return
+	}
+	switch config.GlobalConfig.Rename.Method {
+	case "api":
+		proxy.CountryCodeFromApi()
+	case "regex":
+		proxy.CountryCodeRegex()
+	case "mix":
+		proxy.CountryCodeRegex()
+		if proxy.Info.Country == "UN" {
+			proxy.CountryCodeFromApi()
+		}
+	}
+	name := fmt.Sprintf("%v %03d", proxy.Info.Country, proxy.Id)
+	if config.GlobalConfig.Rename.Flag {
+		proxy.CountryFlag()
+		name = fmt.Sprintf("%v %v", proxy.Info.Flag, name)
+	}
+
+	if utils.Contains(config.GlobalConfig.Check.Items, "speed") {
+		speed := proxy.Info.Speed
+		var speedStr string
+		switch {
+		case speed < 1024:
+			speedStr = fmt.Sprintf("%d KB/s", speed)
+		case speed < 1024*1024:
+			speedStr = fmt.Sprintf("%.2f MB/s", float64(speed)/1024)
+		default:
+			speedStr = fmt.Sprintf("%.2f GB/s", float64(speed)/(1024*1024))
+		}
+		name = fmt.Sprintf("%v | ⬇️ %s", name, speedStr)
+	}
+
+	proxy.Raw["name"] = name
+
+	addRenamedProxy(proxy)
+}
+func checkConfig() {
+	if config.GlobalConfig.Check.Concurrent <= 0 {
+		utils.LogError("concurrent must be greater than 0")
+		os.Exit(1)
+	}
+	utils.LogInfo("concurrents: %v", config.GlobalConfig.Check.Concurrent)
+	switch config.GlobalConfig.Save.Method {
+	case "webdav":
+		if config.GlobalConfig.Save.WebDAVURL == "" {
+			utils.LogError("webdav-url is required when save-method is webdav")
+			os.Exit(1)
+		} else {
+			utils.LogInfo("save method: webdav")
+		}
+	case "http":
+		if config.GlobalConfig.Save.Port <= 0 {
+			utils.LogError("port must be greater than 0 when save-method is http")
+			os.Exit(1)
+		} else {
+			utils.LogInfo("save method: http")
+		}
+	case "gist":
+		if config.GlobalConfig.Save.GithubGistID == "" {
+			utils.LogError("github-gist-id is required when save-method is gist")
+			os.Exit(1)
+		}
+		if config.GlobalConfig.Save.GithubToken == "" {
+			utils.LogError("github-token is required when save-method is gist")
+			os.Exit(1)
+		}
+		utils.LogInfo("save method: gist")
+	}
+	if config.GlobalConfig.SubUrls == nil {
+		utils.LogError("sub-urls is required")
+		os.Exit(1)
+	}
+	switch config.GlobalConfig.Rename.Method {
+	case "api":
+		utils.LogInfo("rename method: api")
+	case "regex":
+		utils.LogInfo("rename method: regex")
+	case "mix":
+		utils.LogInfo("rename method: mix")
+	default:
+		utils.LogError("rename-method must be one of api, regex, mix")
+		os.Exit(1)
+	}
+	if config.GlobalConfig.Proxy.Type == "http" {
+		utils.LogInfo("proxy type: http")
+	} else if config.GlobalConfig.Proxy.Type == "socks" {
+		utils.LogInfo("proxy type: socks")
+	} else {
+		utils.LogInfo("not use proxy")
+	}
+	utils.LogInfo("progress display: %v", config.GlobalConfig.PrintProgress)
+	if config.GlobalConfig.Check.Interval < 10 {
+		utils.LogError("check-interval must be greater than 10 minutes")
+		os.Exit(1)
+	}
+	if len(config.GlobalConfig.Check.Items) == 0 {
+		utils.LogInfo("check items: none")
+	} else {
+		utils.LogInfo("check items: %v", config.GlobalConfig.Check.Items)
+	}
+	if config.GlobalConfig.MihomoApiUrl != "" {
+		version, err := utils.GetVersion()
+		if err != nil {
+			utils.LogError("get version failed: %v", err)
+		} else {
+			utils.LogInfo("auto update provider: true")
+			utils.LogInfo("mihomo version: %v", version)
+		}
+	}
 }

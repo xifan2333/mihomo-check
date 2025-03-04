@@ -1,53 +1,32 @@
 proxy-providers:
   ProviderALL:
-    url: https://
+    url: https:// 
     type: http
     interval: 600
     proxy: DIRECT
-    health-check:
-      enable: true
-      url: http://www.google.com/generate_204
-      interval: 60
     path: ./proxy_provider/ALL.yaml
   ProviderOpenai:
-    url: https://
+    url: https:// 
     type: http
     interval: 600
     proxy: DIRECT
-    health-check:
-      enable: true
-      url: http://www.google.com/generate_204
-      interval: 60
     path: ./proxy_provider/Openai.yaml
   ProviderYoutube:
-    url: https://
+    url: https:// 
     type: http
     interval: 600
     proxy: DIRECT
-    health-check:
-      enable: true
-      url: http://www.google.com/generate_204
-      interval: 60
     path: ./proxy_provider/Youtube.yaml
   ProviderNetflix:
-    url: https://
+    url: https:// 
     type: http
-    interval: 600
     proxy: DIRECT
-    health-check:
-      enable: true
-      url: http://www.google.com/generate_204
-      interval: 60
     path: ./proxy_provider/Netflix.yaml
   ProviderDisney:
-    url: https://
+    url: https:// 
     type: http
     interval: 600
     proxy: DIRECT
-    health-check:
-      enable: true
-      url: http://www.google.com/generate_204
-      interval: 60
     path: ./proxy_provider/Disney.yaml
 
 port: 7890  
@@ -80,15 +59,16 @@ external-controller-unix: mihomo.sock
 
 external-controller-pipe: \\.\pipe\mihomo
 
-# tcp-concurrent: true # TCP 并发连接所有 IP, 将使用最快握手的 TCP
 
 external-ui: ui
-external-ui-url: "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip"
+external-ui-url: "https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip"
+
 
 external-doh-server: /dns-query
 global-client-fingerprint: chrome
 
 hosts:
+  'mb3admin.com': 192.168.31.10
 # '*.mihomo.dev': 127.0.0.1
 # '.dev': 127.0.0.1
 # 'alpha.mihomo.dev': '::1'
@@ -100,29 +80,24 @@ profile:
   store-selected: false
   store-fake-ip: true
 
-# 嗅探域名 可选配置
-# sniffer:
-#   enable: true
-#   override-destination: false
-#   sniff: # TLS 和 QUIC 默认如果不配置 ports 默认嗅探 443
-#     QUIC:
-#     TLS:
-#     # 默认嗅探 80
-#     HTTP: # 需要嗅探的端口
-#       ports: [80, 8080-8880]
-#       override-destination: true
-#   force-domain:
-#     - +.v2ex.com
-#   sniffing:
-#     - tls
-#     - http
-#   port-whitelist:
-#     - "80"
-#     - "443"
+### 域名嗅探
+sniffer:
+  enable: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - "Mijia Cloud"
+    - "+.push.apple.com"
 
 tun:
   enable: true
-  stack: mixed
+  stack: system
   auto-route: true
   auto-redirect: true
   auto-detect-interface: true
@@ -140,7 +115,6 @@ tun:
   endpoint-independent-nat: false
   route-exclude-address:
   - 172.16.0.0/12
-  - 192.168.0.0/16
   - fc00::/7
  
 dns:
@@ -152,19 +126,22 @@ dns:
     fake-ip-range: 198.18.0.1/16
     use-hosts: true
     nameserver: ['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query']
-    fallback: ['https://doh.dns.sb/dns-query', 'https://dns.cloudflare.com/dns-query', 'https://dns.twnic.tw/dns-query', 'tls://8.8.4.4:853']
-    fallback-filter: { geoip: true, ipcidr: [240.0.0.0/4, 0.0.0.0/32] }
+    url-test: ['https://doh.dns.sb/dns-query', 'https://dns.cloudflare.com/dns-query', 'https://dns.twnic.tw/dns-query', 'tls://8.8.4.4:853']
+    url-test-filter: { geoip: true, ipcidr: [240.0.0.0/4, 0.0.0.0/32] }
+
 
 proxy-groups:
   - name: Proxy
     type: select
     interval: 300
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     lazy: true
     timeout: 2000
     max-failed-times: 3
     proxies:
+      - 🙏 自动选择
       - 💪 手动选择
+      - 🎡负载均衡
       - 🇭🇰 香港节点
       - 🇯🇵 日本节点
       - 🇰🇷 韩国节点
@@ -182,12 +159,11 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
     icon: https://cdn.jsdelivr.net/gh/mihomo-party-org/mihomo-party/resources/icon.png
   - name: Cloudflare
     type: select
     interval: 300
-    url: http://cp.cloudflare.com
+    url: https://gstatic.com/generate_204
     lazy: true
     timeout: 2000
     max-failed-times: 3
@@ -211,13 +187,11 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/cloudflare.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/cloudflare.png
   - name: Bing
     type: select
     interval: 300
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     lazy: true
     timeout: 2000
     max-failed-times: 3
@@ -241,11 +215,9 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/microsoft-bing.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/microsoft-bing.png
   - name: Github
-    type: url-test
+    type: select
     interval: 300
     url: https://github.com
     lazy: true
@@ -270,9 +242,7 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/github.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/github.png
   - name: OpenAI
     type: select
     interval: 300
@@ -281,12 +251,14 @@ proxy-groups:
     timeout: 2000
     max-failed-times: 3
     proxies:
+      - 🙏 自动选择 openai
+      - 💪 手动选择 openai
+      - 🇺🇸 美国节点 openai
       - 🇭🇰 香港节点 openai
       - 🇹🇼 台湾节点 openai
       - 🇯🇵 日本节点 openai
       - 🇰🇷 韩国节点 openai
       - 🇸🇬 新加坡节点 openai
-      - 🇺🇸 美国节点 openai
       - 🇬🇧 英国节点 openai
       - 🇫🇷 法国节点 openai
       - 🇩🇪 德国节点 openai
@@ -299,7 +271,6 @@ proxy-groups:
       - 🇵🇱 波兰节点 openai
       - 🇮🇹 意大利节点 openai
       - 🇮🇷 伊朗节点 openai
-      - 🇦🇸 亚太节点 openai
     icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/chatgpt.png
   - name: Netflix
     type: select
@@ -309,12 +280,14 @@ proxy-groups:
     timeout: 2000
     max-failed-times: 3
     proxies:
+      - 🙏 自动选择 netflix
+      - 💪 手动选择 netflix
+      - 🇺🇸 美国节点 netflix
       - 🇭🇰 香港节点 netflix
       - 🇹🇼 台湾节点 netflix
       - 🇯🇵 日本节点 netflix
       - 🇰🇷 韩国节点 netflix
       - 🇸🇬 新加坡节点 netflix
-      - 🇺🇸 美国节点 netflix
       - 🇬🇧 英国节点 netflix
       - 🇫🇷 法国节点 netflix
       - 🇩🇪 德国节点 netflix
@@ -327,8 +300,7 @@ proxy-groups:
       - 🇵🇱 波兰节点 netflix
       - 🇮🇹 意大利节点 netflix
       - 🇮🇷 伊朗节点 netflix
-      - 🇦🇸 亚太节点 netflix
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/netflix.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/netflix.png
   - name: Disney+
     type: select
     interval: 300
@@ -337,12 +309,14 @@ proxy-groups:
     timeout: 2000
     max-failed-times: 3
     proxies:
+      - 🙏 自动选择 disney
+      - 💪 手动选择 disney
+      - 🇺🇸 美国节点 disney
       - 🇭🇰 香港节点 disney
       - 🇹🇼 台湾节点 disney
       - 🇯🇵 日本节点 disney
       - 🇰🇷 韩国节点 disney
       - 🇸🇬 新加坡节点 disney
-      - 🇺🇸 美国节点 disney
       - 🇬🇧 英国节点 disney
       - 🇫🇷 法国节点 disney
       - 🇩🇪 德国节点 disney
@@ -355,8 +329,7 @@ proxy-groups:
       - 🇵🇱 波兰节点 disney
       - 🇮🇹 意大利节点 disney
       - 🇮🇷 伊朗节点 disney
-      - 🇦🇸 亚太节点 disney
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/disney-plus.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/disney-plus.png
   - name: YouTube
     type: select
     interval: 300
@@ -365,12 +338,14 @@ proxy-groups:
     timeout: 2000
     max-failed-times: 3
     proxies:
+      - 🙏 自动选择 youtube
+      - 💪 手动选择 youtube
+      - 🇺🇸 美国节点 youtube
       - 🇭🇰 香港节点 youtube
       - 🇹🇼 台湾节点 youtube
       - 🇯🇵 日本节点 youtube
       - 🇰🇷 韩国节点 youtube
       - 🇸🇬 新加坡节点 youtube
-      - 🇺🇸 美国节点 youtube
       - 🇬🇧 英国节点 youtube
       - 🇫🇷 法国节点 youtube
       - 🇩🇪 德国节点 youtube
@@ -383,8 +358,7 @@ proxy-groups:
       - 🇵🇱 波兰节点 youtube
       - 🇮🇹 意大利节点 youtube
       - 🇮🇷 伊朗节点 youtube
-      - 🇦🇸 亚太节点 youtube
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/youtube.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/youtube.png
   - name: TikTok
     type: select
     proxies:
@@ -406,9 +380,7 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/tiktok.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/tiktok.png
   - name: Spotify
     type: select
     proxies:
@@ -430,16 +402,15 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/spotify.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/spotify.png
   - name: Telegram
-    type: url-test
+    type: select
     url: https://telegram.org
     interval: 300
     timeout: 2000
     max-failed-times: 3
     proxies:
+      - Proxy
       - 🇭🇰 香港节点
       - 🇯🇵 日本节点
       - 🇰🇷 韩国节点
@@ -457,10 +428,7 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - Proxy
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/telegram.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/telegram.png
   - name: Microsoft
     type: select
     proxies:
@@ -483,9 +451,7 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/microsoft.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/microsoft.png
   - name: Onedrive
     type: select
     proxies:
@@ -508,9 +474,7 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/microsoft-onedrive.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/microsoft-onedrive.png
   - name: Apple
     type: select
     proxies:
@@ -533,9 +497,7 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
-    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/svg/apple.svg
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/apple.png
   - name: Gamer
     type: select
     include-all: true
@@ -548,6 +510,7 @@ proxy-groups:
     type: select
     proxies:
       - Proxy
+      - DIRECT
       - 🇭🇰 香港节点
       - 🇯🇵 日本节点
       - 🇰🇷 韩国节点
@@ -565,18 +528,99 @@ proxy-groups:
       - 🇵🇱 波兰节点
       - 🇮🇹 意大利节点
       - 🇮🇷 伊朗节点
-      - 🇦🇸 亚太节点
-      - 其他节点
     icon: https://cdn.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/ForeignMedia.png
   - name: 💪 手动选择
     type: select
     use:
       - ProviderALL
-  - name: 🇭🇰 香港节点
-    type: fallback
-    interval: 10
+  - name: 🙏 自动选择
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
+    disable-udp: false
+    timeout: 2000
+    max-failed-times: 3
+    use:
+      - ProviderALL
+  - name: 🎡负载均衡
+    type: load-balance
+    interval: 60
+    lazy: true
+    url: https://gstatic.com/generate_204
+    disable-udp: false
+    timeout: 2000
+    max-failed-times: 3
+    strategy: sticky-sessions
+    use:
+      - ProviderALL
+  - name: 💪 手动选择 openai
+    type: select
+    use:
+      - ProviderOpenai
+  - name: 💪 手动选择 netflix
+    type: select
+    use:
+      - ProviderNetflix
+  - name: 💪 手动选择 disney
+    type: select
+    use:
+      - ProviderDisney
+  - name: 💪 手动选择 youtube
+    type: select
+    use:
+      - ProviderYoutube
+  - name: 🙏 自动选择 disney
+    type: url-test
+    tolerance: 100
+    interval: 60
+    lazy: true
+    url: https://gstatic.com/generate_204
+    disable-udp: false
+    timeout: 2000
+    max-failed-times: 3
+    use:
+      - ProviderDisney  
+  - name: 🙏 自动选择 youtube
+    type: url-test
+    tolerance: 100
+    interval: 60
+    lazy: true
+    url: https://gstatic.com/generate_204
+    disable-udp: false
+    timeout: 2000
+    max-failed-times: 3
+    use:
+      - ProviderYoutube
+  - name: 🙏 自动选择 netflix
+    type: url-test
+    tolerance: 100
+    interval: 60
+    lazy: true
+    url: https://gstatic.com/generate_204
+    disable-udp: false
+    timeout: 2000
+    max-failed-times: 3
+    use:
+      - ProviderNetflix
+  - name: 🙏 自动选择 openai
+    type: url-test
+    tolerance: 100
+    interval: 60
+    lazy: true
+    url: https://gstatic.com/generate_204
+    disable-udp: false
+    timeout: 2000
+    max-failed-times: 3
+    use:
+      - ProviderOpenai
+  - name: 🇭🇰 香港节点
+    type: url-test
+    tolerance: 100
+    interval: 60
+    lazy: true
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -584,10 +628,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇹🇼 台湾节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -595,10 +640,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇯🇵 日本节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -606,10 +652,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇰🇷 韩国节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -617,10 +664,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇸🇬 新加坡节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -628,10 +676,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇺🇸 美国节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -640,10 +689,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇬🇧 英国节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -651,10 +701,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇫🇷 法国节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -662,10 +713,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇩🇪 德国节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -673,10 +725,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇨🇦 加拿大节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -684,10 +737,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇦🇺 澳大利亚节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -695,10 +749,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇳🇱 荷兰节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -706,10 +761,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇷🇺 俄罗斯节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -717,10 +773,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇭🇺 匈牙利节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -728,10 +785,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇺🇦 乌克兰节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -739,10 +797,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇵🇱 波兰节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -750,10 +809,11 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇮🇹 意大利节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
@@ -761,41 +821,21 @@ proxy-groups:
     use:
       - ProviderALL
   - name: 🇮🇷 伊朗节点
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
-    url: http://www.google.com/generate_204
+    url: https://gstatic.com/generate_204
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
     filter: ^(?=.*((?i)🇮🇷|伊朗|(\b(IR|Iran)\b))).*$
     use:
       - ProviderALL
-  - name: 🇦🇸 亚太节点
-    type: fallback
-    interval: 10
-    lazy: true
-    url: http://www.google.com/generate_204
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)亚太|(\b(AP|Asia Pacific)\b))).*$
-    use:
-      - ProviderALL
-  - name: 其他节点
-    type: fallback
-    interval: 10
-    lazy: true
-    url: http://www.google.com/generate_204
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)其他|(\b(OTHER)\b))).*$
-    use:
-      - ProviderALL
   - name: 🇭🇰 香港节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -808,8 +848,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇹🇼 台湾节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -822,8 +863,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇯🇵 日本节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -836,8 +878,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇰🇷 韩国节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -850,8 +893,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇸🇬 新加坡节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -864,8 +908,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇸 美国节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -879,8 +924,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇬🇧 英国节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -893,8 +939,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇫🇷 法国节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -907,8 +954,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇩🇪 德国节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -921,8 +969,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇨🇦 加拿大节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -935,8 +984,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇦🇺 澳大利亚节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -949,8 +999,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇳🇱 荷兰节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -963,8 +1014,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇷🇺 俄罗斯节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -977,8 +1029,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇭🇺 匈牙利节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -991,8 +1044,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇦 乌克兰节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -1005,8 +1059,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇵🇱 波兰节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -1019,8 +1074,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇹 意大利节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -1033,8 +1089,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇷 伊朗节点 openai
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://openai.com
     disable-udp: false
@@ -1046,23 +1103,10 @@ proxy-groups:
     proxies:
       - REJECT
     hidden: true
-  - name: 🇦🇸 亚太节点 openai
-    type: fallback
-    interval: 10
-    lazy: true
-    url: https://openai.com
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)亚太|(\b(AP|Asia Pacific)\b))).*$
-    use:
-      - ProviderOpenai
-    proxies:
-      - REJECT
-    hidden: true
   - name: 🇭🇰 香港节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1075,8 +1119,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇹🇼 台湾节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1089,8 +1134,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇯🇵 日本节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1103,8 +1149,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇰🇷 韩国节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1117,8 +1164,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇸🇬 新加坡节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1131,8 +1179,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇸 美国节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1146,8 +1195,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇬🇧 英国节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1160,8 +1210,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇫🇷 法国节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1174,8 +1225,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇩🇪 德国节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1188,8 +1240,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇨🇦 加拿大节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1202,8 +1255,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇦🇺 澳大利亚节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1216,8 +1270,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇳🇱 荷兰节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1230,8 +1285,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇷🇺 俄罗斯节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1244,8 +1300,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇭🇺 匈牙利节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1258,8 +1315,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇦 乌克兰节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1272,8 +1330,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇵🇱 波兰节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1286,8 +1345,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇹 意大利节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1300,8 +1360,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇷 伊朗节点 netflix
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://netflix.com
     disable-udp: false
@@ -1313,37 +1374,10 @@ proxy-groups:
     proxies:
       - REJECT
     hidden: true
-  - name: 🇦🇸 亚太节点 netflix
-    type: fallback
-    interval: 10
-    lazy: true
-    url: https://netflix.com
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)亚太|(\b(AP|Asia Pacific)\b))).*$
-    use:
-      - ProviderNetflix
-    proxies:
-      - REJECT
-    hidden: true
-  - name: 其他节点 netflix
-    type: fallback
-    interval: 10
-    lazy: true
-    url: https://netflix.com
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)其他|(\b(OTHER)\b))).*$
-    use:
-      - ProviderNetflix
-    proxies:
-      - REJECT
-    hidden: true
   - name: 🇭🇰 香港节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1356,8 +1390,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇹🇼 台湾节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1370,8 +1405,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇯🇵 日本节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1384,8 +1420,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇰🇷 韩国节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1398,8 +1435,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇸🇬 新加坡节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1412,8 +1450,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇸 美国节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1427,8 +1466,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇬🇧 英国节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1441,8 +1481,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇫🇷 法国节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1455,8 +1496,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇩🇪 德国节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1469,8 +1511,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇨🇦 加拿大节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1483,8 +1526,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇦🇺 澳大利亚节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1497,8 +1541,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇳🇱 荷兰节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1511,8 +1556,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇷🇺 俄罗斯节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1525,8 +1571,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇭🇺 匈牙利节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1539,8 +1586,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇦 乌克兰节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1553,8 +1601,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇵🇱 波兰节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1567,8 +1616,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇹 意大利节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1581,8 +1631,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇷 伊朗节点 disney
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://disney.com
     disable-udp: false
@@ -1594,37 +1645,10 @@ proxy-groups:
     proxies:
       - REJECT
     hidden: true
-  - name: 🇦🇸 亚太节点 disney
-    type: fallback
-    interval: 10
-    lazy: true
-    url: https://disney.com
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)亚太|(\b(AP|Asia Pacific)\b))).*$
-    use:
-      - ProviderDisney
-    proxies:
-      - REJECT
-    hidden: true
-  - name: 其他节点 disney
-    type: fallback
-    interval: 10
-    lazy: true
-    url: https://disney.com
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)其他|(\b(OTHER)\b))).*$
-    use:
-      - ProviderDisney
-    proxies:
-      - REJECT
-    hidden: true
   - name: 🇭🇰 香港节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1637,8 +1661,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇹🇼 台湾节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1651,8 +1676,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇯🇵 日本节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 50
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1665,8 +1691,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇰🇷 韩国节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1679,8 +1706,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇸🇬 新加坡节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1693,8 +1721,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇸 美国节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1708,8 +1737,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇬🇧 英国节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1722,8 +1752,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇫🇷 法国节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1736,8 +1767,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇩🇪 德国节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1750,8 +1782,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇨🇦 加拿大节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1764,8 +1797,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇦🇺 澳大利亚节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1778,8 +1812,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇳🇱 荷兰节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1792,8 +1827,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇷🇺 俄罗斯节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1806,8 +1842,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇭🇺 匈牙利节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1820,8 +1857,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇺🇦 乌克兰节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1834,8 +1872,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇵🇱 波兰节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1848,8 +1887,9 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇹 意大利节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
@@ -1862,42 +1902,15 @@ proxy-groups:
       - REJECT
     hidden: true
   - name: 🇮🇷 伊朗节点 youtube
-    type: fallback
-    interval: 10
+    type: url-test
+    tolerance: 100
+    interval: 60
     lazy: true
     url: https://youtube.com
     disable-udp: false
     timeout: 2000
     max-failed-times: 3
     filter: ^(?=.*((?i)🇮🇷|伊朗|(\b(IR|Iran)\b))).*$
-    use:
-      - ProviderYoutube
-    proxies:
-      - REJECT
-    hidden: true
-  - name: 🇦🇸 亚太节点 youtube
-    type: fallback
-    interval: 10
-    lazy: true
-    url: https://youtube.com
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)亚太|(\b(AP|Asia Pacific)\b))).*$
-    use:
-      - ProviderYoutube
-    proxies:
-      - REJECT
-    hidden: true
-  - name: 其他节点 youtube
-    type: fallback
-    interval: 10
-    lazy: true
-    url: https://youtube.com
-    disable-udp: false
-    timeout: 2000
-    max-failed-times: 3
-    filter: ^(?=.*((?i)其他|(\b(OTHER)\b))).*$
     use:
       - ProviderYoutube
     proxies:
@@ -2032,6 +2045,14 @@ rule-providers:
     proxy: DIRECT
     url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/ChinaMax/ChinaMax_Classical.yaml
     path: ./RuleSet/China.yaml
+  Tencent:
+    type: http
+    behavior: classical
+    interval: 86400
+    format: yaml
+    proxy: DIRECT
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Tencent/Tencent.yaml
+    path: ./RuleSet/Tencent.yaml
   LAN:
     type: http
     behavior: classical
@@ -2081,6 +2102,14 @@ rule-providers:
     url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Telegram/Telegram.yaml
     path: ./RuleSet/Telegram.yaml
 rules:
+  - RULE-SET,ChinaMedia,DIRECT
+  - RULE-SET,China,DIRECT
+  - RULE-SET,LAN,DIRECT
+  - GEOIP,CN,DIRECT
+  - RULE-SET,ChinaMedia,DIRECT
+  - RULE-SET,China,DIRECT
+  - RULE-SET,LAN,DIRECT
+  - GEOIP,CN,DIRECT
   - RULE-SET,OpenAI,OpenAI
   - RULE-SET,Cloudflare,Cloudflare
   - RULE-SET,Github,Github
@@ -2100,33 +2129,10 @@ rules:
   - RULE-SET,Microsoft,Microsoft
   - RULE-SET,GlobalMedia,GlobalMedia
   - RULE-SET,Proxy,Proxy
-  - RULE-SET,ChinaMedia,DIRECT
-  - RULE-SET,China,DIRECT
-  - RULE-SET,LAN,DIRECT
-  - GEOIP,CN,DIRECT
   - MATCH,Proxy
 secret: ""
 unified-delay: false
 tcp-concurrent: true
-sniffer:
-  enable: true
-  parse-pure-ip: true
-  force-dns-mapping: true
-  override-destination: false
-  sniff:
-    HTTP:
-      ports:
-        - 80
-        - 443
-      override-destination: false
-    TLS:
-      ports:
-        - 443
-    QUIC:
-      ports:
-        - 443
-  skip-domain:
-    - +.push.apple.com
 geodata-mode: false
 skip-auth-prefixes:
   - 127.0.0.1/32

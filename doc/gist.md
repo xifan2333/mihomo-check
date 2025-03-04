@@ -1,42 +1,60 @@
-# gist 保存方法
+# Gist Saving Method
 
-## 部署
+## Deployment
 
-- 随意创建一个Gist
+- Create a Gist at your convenience.
 
-- 将 gist id 配置到 `config.yaml` 中
+- Configure the gist id in `config.yaml`.
 
-- 将 gist token 配置到 `config.yaml` 中
+- Configure the gist token in `config.yaml`.
 
+## Worker Reverse Proxy for GitHub API
 
-## 获取订阅
+- Deploy the [worker](./cloudflare/worker.js) to Cloudflare Workers.
 
-- 全部订阅
+- Set `GITHUB_USER` in `Variables and Secrets` to your GitHub username.
 
-```
-https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/all
-```
+- Set `GITHUB_ID` in `Variables and Secrets` to your gist id.
 
-- 解锁openai的节点
+- Set `AUTH_TOKEN` in `Variables and Secrets` to your access token.
 
-```
-https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/openai
-```
-
-- 解锁netflix的节点
+- Configure `github-api-mirror` to your worker address.
 
 ```
-https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/netflix
+    github-api-mirror: "https://your-worker-url/github"
 ```
 
-- 解锁disney的节点
+## Subscription Retrieval
+
+> If the Worker is configured, change the `key` accordingly.
+> The subscription format is `https://your-worker-url/gist?key=all.yaml&token=AUTH_TOKEN`.
+
+- Subscribe to all
 
 ```
-https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/disney
+https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/all.yaml
 ```
 
-- 解锁youtube的节点
+- Unlock OpenAI nodes
 
 ```
-https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/youtube
+https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/openai.yaml
+```
+
+- Unlock Netflix nodes
+
+```
+https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/netflix.yaml
+```
+
+- Unlock Disney nodes
+
+```
+https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/disney.yaml
+```
+
+- Unlock YouTube nodes
+
+```
+https://gist.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_GIST_ID/raw/youtube.yaml
 ```
