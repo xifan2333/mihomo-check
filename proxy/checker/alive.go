@@ -7,9 +7,11 @@ import (
 
 func (c *Checker) AliveTest(url string, expectedStatus int) {
 
+	defer c.Proxy.CloseTransport()
+
 	start := time.Now()
 
-	req, err := http.NewRequest(http.MethodHead, url, nil)
+	req, err := http.NewRequestWithContext(c.Proxy.Ctx, http.MethodHead, url, nil)
 
 	if err != nil {
 		return

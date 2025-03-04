@@ -9,10 +9,12 @@ import (
 )
 
 func (c *Checker) CheckSpeed() {
+
 	speedClient := &http.Client{
 		Timeout:   time.Duration(config.GlobalConfig.Check.DownloadTimeout) * time.Second,
 		Transport: c.Proxy.Client.Transport,
 	}
+	defer speedClient.CloseIdleConnections()
 
 	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", config.GlobalConfig.Check.SpeedTestUrl, nil)
 	if err != nil {

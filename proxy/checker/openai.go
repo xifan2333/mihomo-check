@@ -7,6 +7,7 @@ import (
 )
 
 func (c *Checker) OpenaiTest() {
+	defer c.Proxy.CloseTransport()
 	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", "https://android.chat.openai.com", nil)
 	if err != nil {
 		return

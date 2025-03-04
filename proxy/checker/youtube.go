@@ -7,6 +7,8 @@ import (
 )
 
 func (c *Checker) YoutubeTest() {
+	defer c.Proxy.CloseTransport()
+
 	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", "https://www.youtube.com/premium", nil)
 	if err != nil {
 		return

@@ -57,7 +57,6 @@ func taskGetProxies(args string) {
 		mihomoProxies = append(mihomoProxies, proxies...)
 		mihomoProxiesMutex.Unlock()
 	} else {
-		utils.LogInfo("subscription link: %s is not yaml", args)
 		reg, _ := regexp.Compile("(ssr|ss|vmess|trojan|vless|hysteria|hy2|hysteria2)://")
 		if !reg.Match(data) {
 			data = []byte(parser.DecodeBase64(string(data)))
