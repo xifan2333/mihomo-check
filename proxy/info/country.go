@@ -15,6 +15,7 @@ import (
 )
 
 func (p *Proxy) CountryCodeFromApi() {
+	defer p.CloseTransport()
 	apis := []string{
 		"https://api.ip.sb/geoip",
 		"https://ipapi.co/json",
@@ -94,13 +95,13 @@ func (p *Proxy) CountryCodeFromApi() {
 			}
 		}
 	}
-	if countryCode == "" {
+	if len(countryCode) == 0 {
 		p.Info.Country = "UN"
+	} else {
+		p.Info.Country = countryCode
 	}
-	p.Info.Country = countryCode
 }
 func getFlag(countryCode string) string {
-
 	code := strings.ToUpper(countryCode)
 
 	const flagBase = 127397

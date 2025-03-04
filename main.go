@@ -283,6 +283,7 @@ func proxyCheckTask(arg map[string]any) {
 	}
 }
 func proxyRenameTask(proxy *info.Proxy) {
+	proxy.New()
 	defer proxy.Close()
 	if proxy == nil {
 		return

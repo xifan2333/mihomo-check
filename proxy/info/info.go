@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bestruirui/bestsub/config"
+	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/constant"
 )
 
@@ -41,14 +43,26 @@ func (p *Proxy) Close() {
 	if p.Cancel != nil {
 		p.Cancel()
 	}
-	if p.Client != nil {
-		if transport, ok := p.Client.Transport.(*http.Transport); ok {
-			transport.CloseIdleConnections()
-		}
-		p.Client = nil
+	if transport, ok := p.Client.Transport.(*http.Transport); ok {
+		transport.CloseIdleConnections()
 	}
 }
-
+func (p *Proxy) CloseTransport() {
+	if transport, ok := p.Client.Transport.(*http.Transport); ok {
+		transport.CloseIdleConnections()
+	}
+}
+func (p *Proxy) New() {
+	p.Ctx, p.Cancel = context.WithCancel(context.Background())
+	proxy, err := adapter.ParseProxy(p.Raw)
+	if err != nil {
+		return
+	}
+	p.Client = &http.Client{
+		Timeout:   time.Duration(config.GlobalConfig.Check.Timeout) * time.Millisecond,
+		Transport: BuildTransport(proxy, p.Ctx),
+	}
+}
 func BuildTransport(proxy constant.Proxy, ctx context.Context) *http.Transport {
 	transport := &http.Transport{
 		DialContext: func(_ context.Context, network, addr string) (net.Conn, error) {
