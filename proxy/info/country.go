@@ -25,7 +25,7 @@ func (p *Proxy) CountryCodeFromApi() {
 
 	for _, api := range apis {
 		for attempts := 0; attempts < 5; attempts++ {
-			req, err := http.NewRequest("GET", api, nil)
+			req, err := http.NewRequestWithContext(p.Ctx, "GET", api, nil)
 			if err != nil {
 				time.Sleep(time.Second * time.Duration(attempts))
 				continue

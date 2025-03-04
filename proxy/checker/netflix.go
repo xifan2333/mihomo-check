@@ -3,7 +3,7 @@ package checker
 import "net/http"
 
 func (c *Checker) NetflixTest() {
-	req, err := http.NewRequest("GET", "https://www.netflix.com/title/81280792", nil)
+	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", "https://www.netflix.com/title/81280792", nil)
 	if err != nil {
 		return
 	}

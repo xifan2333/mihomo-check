@@ -14,7 +14,11 @@ func (c *Checker) CheckSpeed() {
 		Transport: c.Proxy.Client.Transport,
 	}
 
-	resp, err := speedClient.Get(config.GlobalConfig.Check.SpeedTestUrl)
+	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", config.GlobalConfig.Check.SpeedTestUrl, nil)
+	if err != nil {
+		return
+	}
+	resp, err := speedClient.Do(req)
 	if err != nil {
 		return
 	}

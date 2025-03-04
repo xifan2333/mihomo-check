@@ -16,7 +16,7 @@ func (c *Checker) DisneyTest() {
 		userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
 	)
 
-	req, err := http.NewRequest("POST", "https://disney.api.edge.bamgrid.com/devices", strings.NewReader(assertion))
+	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "POST", "https://disney.api.edge.bamgrid.com/devices", strings.NewReader(assertion))
 	if err != nil {
 		return
 	}
@@ -47,7 +47,7 @@ func (c *Checker) DisneyTest() {
 	}
 
 	tokenData := strings.Replace(cookie, "DISNEYASSERTION", assertionToken, 1)
-	req, err = http.NewRequest("POST", "https://disney.api.edge.bamgrid.com/token", strings.NewReader(tokenData))
+	req, err = http.NewRequestWithContext(c.Proxy.Ctx, "POST", "https://disney.api.edge.bamgrid.com/token", strings.NewReader(tokenData))
 	if err != nil {
 		return
 	}
@@ -83,7 +83,7 @@ func (c *Checker) DisneyTest() {
 
 	gqlQuery := fmt.Sprintf(`{"query":"mutation refreshToken($input: RefreshTokenInput!) {refreshToken(refreshToken: $input) {activeSession {sessionId}}}","variables":{"input":{"refreshToken":"%s"}}}`, refreshToken)
 
-	req, err = http.NewRequest("POST", "https://disney.api.edge.bamgrid.com/graph/v1/device/graphql", strings.NewReader(gqlQuery))
+	req, err = http.NewRequestWithContext(c.Proxy.Ctx, "POST", "https://disney.api.edge.bamgrid.com/graph/v1/device/graphql", strings.NewReader(gqlQuery))
 	if err != nil {
 		return
 	}
