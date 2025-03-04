@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/bestruirui/bestsub/config"
@@ -15,6 +17,7 @@ import (
 	"github.com/bestruirui/bestsub/utils"
 	"github.com/fsnotify/fsnotify"
 	"github.com/metacubex/mihomo/log"
+	"github.com/panjf2000/ants/v2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -175,6 +178,26 @@ func (app *App) Run() {
 	}
 }
 
+var (
+	aliveProxies   []*info.Proxy
+	renamedProxies []*info.Proxy
+	aliveMutex     sync.Mutex
+	aliveCount     int
+)
+
+func addAliveProxy(proxy *info.Proxy) {
+	aliveMutex.Lock()
+	defer aliveMutex.Unlock()
+	proxy.Id = aliveCount
+	aliveProxies = append(aliveProxies, proxy)
+	aliveCount++
+}
+func addRenamedProxy(proxy *info.Proxy) {
+	aliveMutex.Lock()
+	defer aliveMutex.Unlock()
+	renamedProxies = append(renamedProxies, proxy)
+}
+
 func main() {
 
 	app := NewApp()
@@ -187,65 +210,60 @@ func main() {
 	app.Run()
 }
 func maintask() {
-
 	proxies, err := proxy.GetProxies()
 	if err != nil {
+		utils.LogError("get proxies failed: %v", err)
+		return
 	}
-
 	utils.LogInfo("get proxies success: %v proxies", len(proxies))
-
 	proxies = info.DeduplicateProxies(proxies)
-
 	utils.LogInfo("deduplicate proxies: %v proxies", len(proxies))
 
-	proxyTasks := make([]interface{}, len(proxies))
-	for i, proxy := range proxies {
-		proxyTasks[i] = proxy
-	}
+	var wg sync.WaitGroup
+	aliveProxies = make([]*info.Proxy, 0)
+	pool, _ := ants.NewPool(config.GlobalConfig.Check.Concurrent)
+	defer pool.Release()
 
-	pool := utils.NewThreadPool(config.GlobalConfig.Check.Concurrent, proxyAliveTask)
-	pool.Start()
-	pool.AddTaskArgs(proxyTasks)
-	pool.Wait()
-	results := pool.GetResults()
-	var success int
-	var successProxies []info.Proxy
-	for _, result := range results {
-		if result.Err != nil {
-			continue
-		}
-		proxy := result.Result.(*info.Proxy)
-		if proxy.Info.Alive {
-			success++
-			proxy.Id = success
-			successProxies = append(successProxies, *proxy)
-		}
+	for _, proxy := range proxies {
+		wg.Add(1)
+		pool.Submit(func() {
+			defer wg.Done()
+			proxyCheckTask(proxy)
+		})
 	}
+	wg.Wait()
 
-	renameTasks := make([]interface{}, len(successProxies))
-	for i, proxy := range successProxies {
-		renameTasks[i] = proxy
+	renamedProxies = make([]*info.Proxy, 0)
+	for _, proxy := range aliveProxies {
+		wg.Add(1)
+		pool.Submit(func() {
+			defer wg.Done()
+			proxyRenameTask(proxy)
+		})
 	}
-	pool = utils.NewThreadPool(config.GlobalConfig.Check.Concurrent, proxyRenameTask)
-	pool.Start()
-	pool.AddTaskArgs(renameTasks)
-	pool.Wait()
-	renameResults := pool.GetResults()
-	var renamedProxies []info.Proxy
-	for _, result := range renameResults {
-		if result.Err != nil {
-			continue
-		}
-		proxy := result.Result.(info.Proxy)
-		renamedProxies = append(renamedProxies, proxy)
-	}
+	wg.Wait()
+
 	utils.LogInfo("check and rename end %v proxies", len(renamedProxies))
+
 	saver.SaveConfig(renamedProxies)
+
+	runtime.GC()
 }
-func proxyAliveTask(task interface{}) (interface{}, error) {
-	proxy := proxy.NewProxy(task.(map[string]any))
+
+func proxyCheckTask(arg map[string]any) {
+	proxy := proxy.NewProxy(arg)
+	if proxy == nil {
+		return
+	}
+	defer proxy.Close()
 	checker := checker.NewChecker(proxy)
-	checker.AliveTest("https://gstatic.com/generate_204", 204)
+	defer checker.Close()
+	for i := 0; i < 3; i++ {
+		checker.AliveTest("https://gstatic.com/generate_204", 204)
+		if proxy.Info.Alive {
+			break
+		}
+	}
 	for _, item := range config.GlobalConfig.Check.Items {
 		switch item {
 		case "openai":
@@ -260,10 +278,15 @@ func proxyAliveTask(task interface{}) (interface{}, error) {
 			checker.CheckSpeed()
 		}
 	}
-	return proxy, nil
+	if proxy.Info.Alive {
+		addAliveProxy(proxy)
+	}
 }
-func proxyRenameTask(task interface{}) (interface{}, error) {
-	proxy := task.(info.Proxy)
+func proxyRenameTask(proxy *info.Proxy) {
+	defer proxy.Close()
+	if proxy == nil {
+		return
+	}
 	switch config.GlobalConfig.Rename.Method {
 	case "api":
 		proxy.CountryCodeFromApi()
@@ -296,7 +319,8 @@ func proxyRenameTask(task interface{}) (interface{}, error) {
 	}
 
 	proxy.Raw["name"] = name
-	return proxy, nil
+
+	addRenamedProxy(proxy)
 }
 func checkConfig() {
 	if config.GlobalConfig.Check.Concurrent <= 0 {
