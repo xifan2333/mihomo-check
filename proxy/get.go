@@ -1,57 +1,63 @@
 package proxy
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/bestruirui/bestsub/config"
 	"github.com/bestruirui/bestsub/proxy/parser"
 	"github.com/bestruirui/bestsub/utils"
+	"github.com/panjf2000/ants/v2"
 	"gopkg.in/yaml.v3"
 )
+
+var mihomoProxies []map[string]any
+var mihomoProxiesMutex sync.Mutex
 
 func GetProxies() ([]map[string]any, error) {
 	utils.LogInfo("currently, there are %d subscription links set", len(config.GlobalConfig.SubUrls))
 
-	subUrls := make([]interface{}, len(config.GlobalConfig.SubUrls))
-	for i, url := range config.GlobalConfig.SubUrls {
-		subUrls[i] = url
-	}
-	numWorkers := min(len(subUrls), config.GlobalConfig.Check.Concurrent)
+	numWorkers := min(len(config.GlobalConfig.SubUrls), config.GlobalConfig.Check.Concurrent)
 
-	pool := utils.NewThreadPool(numWorkers, taskGetProxies)
-	pool.Start()
-	pool.AddTaskArgs(subUrls)
-	pool.Wait()
-	results := pool.GetResults()
-	var mihomoProxies []map[string]any
-
-	for _, result := range results {
-		if result.Result != nil {
-			mihomoProxies = append(mihomoProxies, result.Result.([]map[string]any)...)
-		}
+	pool, _ := ants.NewPool(numWorkers)
+	defer pool.Release()
+	var wg sync.WaitGroup
+	for _, subUrl := range config.GlobalConfig.SubUrls {
+		wg.Add(1)
+		pool.Submit(func() {
+			defer wg.Done()
+			taskGetProxies(subUrl)
+		})
 	}
+	wg.Wait()
 	return mihomoProxies, nil
 }
 
-func taskGetProxies(args interface{}) (interface{}, error) {
-	subUrl := args.(string)
-	var mihomoProxies []map[string]any
-	data, err := getDateFromSubs(subUrl)
+func taskGetProxies(args string) {
+	data, err := getDateFromSubs(args)
 	if err != nil {
-		return nil, err
+		return
 	}
-	var config map[string]any
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		data = removeAllControlCharacters(data)
-		err = yaml.Unmarshal(data, &config)
-	}
-	if err != nil {
+	if IsYaml(data) {
+		proxies, err := ParseYamlProxy(data)
+		if err != nil {
+			utils.LogError("subscription link: %s has no proxies", args)
+			return
+		}
+		mihomoProxiesMutex.Lock()
+		mihomoProxies = append(mihomoProxies, proxies...)
+		mihomoProxiesMutex.Unlock()
+	} else {
+		utils.LogInfo("subscription link: %s is not yaml", args)
 		reg, _ := regexp.Compile("(ssr|ss|vmess|trojan|vless|hysteria|hy2|hysteria2)://")
 		if !reg.Match(data) {
 			data = []byte(parser.DecodeBase64(string(data)))
@@ -67,31 +73,12 @@ func taskGetProxies(args interface{}) (interface{}, error) {
 				if parseProxy == nil {
 					continue
 				}
+				mihomoProxiesMutex.Lock()
 				mihomoProxies = append(mihomoProxies, parseProxy)
+				mihomoProxiesMutex.Unlock()
 			}
-		}
-	} else {
-		proxyInterface, ok := config["proxies"]
-		if !ok || proxyInterface == nil {
-			utils.LogError("subscription link: %s has no proxies", subUrl)
-			return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
-		}
-
-		proxyList, ok := proxyInterface.([]any)
-		if !ok {
-			return nil, fmt.Errorf("subscription link: %s has no proxies", subUrl)
-		}
-
-		for _, proxy := range proxyList {
-			proxyMap, ok := proxy.(map[string]any)
-			if !ok {
-				continue
-			}
-			mihomoProxies = append(mihomoProxies, proxyMap)
 		}
 	}
-
-	return mihomoProxies, nil
 }
 
 func getDateFromSubs(subUrl string) ([]byte, error) {
@@ -136,10 +123,101 @@ func getDateFromSubs(subUrl string) ([]byte, error) {
 }
 func removeAllControlCharacters(data []byte) []byte {
 	var cleanedData []byte
-	for _, b := range data {
-		if b >= 32 && b <= 126 || b == '\n' || b == '\t' || b == '\r' {
-			cleanedData = append(cleanedData, b)
+	for len(data) > 0 {
+		r, size := utf8.DecodeRune(data)
+		if r != utf8.RuneError && (r >= 32 && r <= 126) || r == '\n' || r == '\t' || r == '\r' || unicode.Is(unicode.Han, r) {
+			cleanedData = append(cleanedData, data[:size]...)
 		}
+		data = data[size:]
 	}
 	return cleanedData
+}
+
+func IsYaml(data []byte) bool {
+	var isYamlBuffer map[string]any
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+	var lines []byte
+	lineCount := 0
+	for scanner.Scan() {
+		lines = append(lines, scanner.Bytes()...)
+		lines = append(lines, '\n')
+		lineCount++
+		if lineCount >= 100 {
+			break
+		}
+	}
+	err := yaml.Unmarshal(lines, &isYamlBuffer)
+	if err != nil {
+		removeAllControlCharacters(lines)
+		err = yaml.Unmarshal(lines, &isYamlBuffer)
+		if err != nil {
+			isYamlBuffer = nil
+			return false
+		}
+	}
+	isYamlBuffer = nil
+	return true
+}
+func ParseYamlProxy(data []byte) ([]map[string]any, error) {
+	var inProxiesSection bool
+	var yamlBuffer bytes.Buffer
+	var proxies []map[string]any
+	var indent int
+	var isFirst bool = true
+
+	cleandata := removeAllControlCharacters(data)
+	cleanedFile := bytes.NewReader(cleandata)
+	scanner := bufio.NewScanner(cleanedFile)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmedLine := strings.TrimSpace(line)
+
+		if trimmedLine == "proxies:" {
+			inProxiesSection = true
+			continue
+		}
+
+		if !inProxiesSection {
+			continue
+		}
+
+		if isFirst {
+			indent = len(line) - len(trimmedLine)
+			isFirst = false
+		}
+
+		if len(line)-len(trimmedLine) == 0 && !strings.HasPrefix(trimmedLine, "-") && trimmedLine != "" {
+			break
+		}
+
+		if trimmedLine == "" || strings.HasPrefix(trimmedLine, "#") {
+			continue
+		}
+
+		if strings.HasPrefix(trimmedLine, "-") && len(line)-len(trimmedLine) == indent {
+			if yamlBuffer.Len() > 0 {
+				var proxy []map[string]any
+				if err := yaml.Unmarshal(yamlBuffer.Bytes(), &proxy); err != nil {
+
+				} else {
+					proxies = append(proxies, proxy...)
+				}
+				yamlBuffer.Reset()
+			}
+			yamlBuffer.WriteString(line + "\n")
+		} else if yamlBuffer.Len() > 0 {
+			yamlBuffer.WriteString(line + "\n")
+		}
+	}
+
+	if yamlBuffer.Len() > 0 {
+		var proxy []map[string]any
+		if err := yaml.Unmarshal(yamlBuffer.Bytes(), &proxy); err != nil {
+		} else {
+			proxies = append(proxies, proxy...)
+		}
+	}
+
+	return proxies, nil
 }
