@@ -1,0 +1,65 @@
+
+# 是否打印进度 
+print-progress: false
+
+rename:
+  # 重命名方法 api 或 regex 或 mix
+  method: mix
+  # 是否显示旗帜信息
+  flag: false
+
+check:
+  # 并发
+  concurrent: 100
+  # 检查间隔,单位分钟
+  interval: 10
+  # 超时时间 单位毫秒
+  timeout: 2000
+  # 最低测速 单位KB/s
+  min-speed: 2048
+  # 下载测试超时时间(s)
+  download-timeout: 10
+  # 测速地址
+  speed-test-url: https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v3.121.12-beta/Update-W2xEX-v3.121.12-beta-FROM-v3.121.01.7z
+  # 检查项目（根据需要选择）
+  items:
+    - openai # ChatGPT Android APP 是否可用
+    - youtube # YouTube 是否可用
+    - netflix # Netflix 是否可用
+    - disney # Disney+ 是否可用
+    - speed # 测速
+
+save:
+  # 保存方法 webdav 或 http 或 gist 或 r2 或 local
+  method: webdav
+  # 使用http保存方式时需要的端口
+  port: 8080
+  # webdav
+  webdav-url: "https://webdav.company/dav"
+  webdav-username: "username"
+  webdav-password: "password"
+  # github token
+  github-token: ""
+  # gist id
+  github-gist-id: ""
+  # github api mirror
+  github-api-mirror: "https://your-worker-url.com/github"
+  #worker-url
+  worker-url: https://your-worker-url.com
+  #worker-token
+  worker-token: your-worker-token
+
+# mihomo api
+mihomo-api-url: "http://192.168.31.11:9090"
+# mihomo api secret
+mihomo-api-secret: ""
+# 重试次数
+sub-urls-retry: 3
+# 代理设置 支持 http 和 socks 代理
+proxy:
+  type: "http" # 可选值: http, socks
+  address: "http://192.168.31.11:7890" # 代理地址
+# 订阅链接
+sub-urls:
+  - https://example.com/sub1
+  - https://example.com/sub2

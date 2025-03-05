@@ -1,83 +1,67 @@
 package config
 
 const DefaultConfigTemplate = `
-# 是否显示进度
-print-progress: true
+# Whether to print progress
+print-progress: false
 
-# 并发线程数
-concurrent: 200
+rename:
+  # Renaming method: api, regex, or mix
+  method: mix
+  # Whether to show flag information
+  flag: false
 
-# 检查间隔(分钟)
-check-interval: 30
+check:
+  # Concurrency
+  concurrent: 100
+  # Check interval, in minutes
+  interval: 10
+  # Timeout, in milliseconds
+  timeout: 2000
+  # Minimum speed, in KB/s
+  min-speed: 2048
+  # Download test timeout, in seconds
+  download-timeout: 10
+  # Speed test URL
+  speed-test-url: https://github.com/AaronFeng753/Waifu2x-Extension-GUI/releases/download/v3.121.12-beta/Update-W2xEX-v3.121.12-beta-FROM-v3.121.01.7z
+  # Items to check
+  items:
+    - openai
+    - youtube
+    - netflix
+    - disney
 
-# 超时时间(毫秒)
-timeout: 5000
+save:
+  # Save method: webdav, http, gist, or r2
+  method: webdav
+  # Save port
+  port: 8080
+  # WebDAV
+  webdav-url: "https://webdav.company/dav"
+  webdav-username: "username"
+  webdav-password: "password"
+  # GitHub token
+  github-token: ""
+  # Gist ID
+  github-gist-id: ""
+  # GitHub API mirror
+  github-api-mirror: "https://your-worker-url.com/github"
+  # Worker URL
+  worker-url: https://your-worker-url.com
+  # Worker token
+  worker-token: your-worker-token
 
-# 下载测试大小(MB)
-download-size: 20
-
-# 上传测试大小(MB)
-upload-size: 20
-
-# mihomo api url
-mihomo-api-url: https://api.mihomo.me/v3/
-
-# mihomo api secret
+# Mihomo API
+mihomo-api-url: "http://192.168.31.11:9090"
+# Mihomo API secret
 mihomo-api-secret: ""
-
-# 保存方法
-# 目前支持的保存方法: r2, local, gist, webdav
-save-method: r2
-
-# webdav
-webdav-url: "https://example.com/dav/"
-webdav-username: "admin"
-webdav-password: "admin"
-
-# gist id
-github-gist-id: ""
-
-# github token
-github-token: ""
-
-# github api mirror
-github-api-mirror: ""
-
-# 将测速结果推送到Worker的地址
-worker-url: https://example.worker.dev
-
-# Worker令牌
-worker-token: 1234567890
-
-# 重试次数
+# Retry count for subscription URLs
 sub-urls-retry: 3
-
-# 订阅地址
+# Proxy settings, supports http and socks proxies
+proxy:
+  type: "http" # Options: http, socks
+  address: "http://192.168.31.11:7890" # Proxy address
+# Subscription URLs
 sub-urls:
-  - https://example.com/sub.txt
-  - https://example.com/sub2.txt
-
-# IP信息配置
-ip-info:
-  # IP查询API
-  api-url:
-    - http://ifconfig.me
-    - http://ip.sb
-    - http://ifconfig.es
-    - http://ipinfo.io/ip
-    - http://ipecho.net/ip
-    - http://ident.me
-    - http://eth0.me
-    - http://ipaddr.site
-    - http://ipaddress.sh
-    - http://l2.io/ip
-    - http://tnx.nl/ip
-    - http://wgetip.com
-    - http://ip.tyk.nu
-    - http://curlmyip.net
-    - http://ipcalf.com
-    - http://checkip.amazonaws.com
-
-  # IP数据库下载地址
-  ipdb-url: https://cdn.jsdelivr.net/npm/openipdb.ipdb@2025.1.4/openipdb.ipdb
+  - https://example.com/sub1
+  - https://example.com/sub2
 `

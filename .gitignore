@@ -1,4 +1,4 @@
-openipdb.ipdb
 config.yaml
 mihomo.yaml
-test
+*test*
+docker-compose.yml
