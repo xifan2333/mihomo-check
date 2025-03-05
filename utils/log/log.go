@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -25,6 +26,18 @@ const (
 	ResetColor = "\033[0m"
 	TimeFormat = "2006-01-02T15:04:05"
 )
+
+// 绝对路径
+var absPath string
+
+func init() {
+	wd, err := os.Getwd()
+	if err != nil {
+		absPath = "."
+	} else {
+		absPath = wd
+	}
+}
 
 func SetLogLevel(level string) {
 	switch level {
@@ -70,12 +83,7 @@ func log(level LogLevel, format string, v ...any) {
 	if level == LogLevelDebug || level == LogLevelError {
 		_, file, line, ok := runtime.Caller(2)
 		if ok {
-			bestsubIndex := strings.Index(file, "bestsub")
-			if bestsubIndex != -1 {
-				location = fmt.Sprintf("%s:%d ", file[bestsubIndex:], line)
-			} else {
-				location = fmt.Sprintf("%s:%d ", file, line)
-			}
+			location = fmt.Sprintf("%s:%d ", file[len(absPath)+1:], line)
 		}
 	}
 
