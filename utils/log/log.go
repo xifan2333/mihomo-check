@@ -2,8 +2,6 @@ package log
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -72,16 +70,11 @@ func log(level LogLevel, format string, v ...any) {
 	if level == LogLevelDebug || level == LogLevelError {
 		_, file, line, ok := runtime.Caller(2)
 		if ok {
-			wd, err := os.Getwd()
-			if err != nil {
-				location = fmt.Sprintf("%s:%d ", file, line)
+			bestsubIndex := strings.Index(file, "bestsub")
+			if bestsubIndex != -1 {
+				location = fmt.Sprintf("%s:%d ", file[bestsubIndex:], line)
 			} else {
-				relPath, err := filepath.Rel(wd, file)
-				if err != nil {
-					location = fmt.Sprintf("%s:%d ", file, line)
-				} else {
-					location = fmt.Sprintf("%s:%d ", relPath, line)
-				}
+				location = fmt.Sprintf("%s:%d ", file, line)
 			}
 		}
 	}

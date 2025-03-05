@@ -51,6 +51,7 @@ func (c *Checker) CheckSpeed() {
 			return
 		}
 	}
+	buffer = nil
 
 	if firstRead {
 		return

@@ -228,7 +228,7 @@ func maintask() {
 	log.Info("deduplicate proxies: %v proxies", len(proxies))
 
 	var wg sync.WaitGroup
-	aliveProxies = make([]*info.Proxy, 0)
+	aliveProxies = aliveProxies[:0]
 	pool, _ := ants.NewPool(config.GlobalConfig.Check.Concurrent)
 	defer pool.Release()
 
@@ -241,7 +241,7 @@ func maintask() {
 	}
 	wg.Wait()
 
-	renamedProxies = make([]*info.Proxy, 0)
+	renamedProxies = renamedProxies[:0]
 	for _, proxy := range aliveProxies {
 		wg.Add(1)
 		pool.Submit(func() {

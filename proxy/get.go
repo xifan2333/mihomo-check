@@ -21,12 +21,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var mihomoProxies []map[string]any
-var mihomoProxiesMutex sync.Mutex
+var (
+	mihomoProxies      []map[string]any
+	mihomoProxiesMutex sync.Mutex
+)
 
 func GetProxies() ([]map[string]any, error) {
 	log.Info("currently, there are %d subscription links set", len(config.GlobalConfig.SubUrls))
-
+	mihomoProxies = mihomoProxies[:0]
 	numWorkers := min(len(config.GlobalConfig.SubUrls), config.GlobalConfig.Check.Concurrent)
 
 	pool, _ := ants.NewPool(numWorkers)
