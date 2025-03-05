@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"time"
@@ -9,14 +10,15 @@ import (
 )
 
 func (c *Checker) CheckSpeed() {
+	ctx, cancel := context.WithCancel(c.Proxy.Ctx)
+	defer cancel()
 
 	speedClient := &http.Client{
 		Timeout:   time.Duration(config.GlobalConfig.Check.DownloadTimeout) * time.Second,
 		Transport: c.Proxy.Client.Transport,
 	}
-	defer speedClient.CloseIdleConnections()
 
-	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", config.GlobalConfig.Check.SpeedTestUrl, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", config.GlobalConfig.Check.SpeedTestUrl, nil)
 	if err != nil {
 		return
 	}

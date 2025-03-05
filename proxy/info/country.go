@@ -1,6 +1,7 @@
 package info
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,7 +16,9 @@ import (
 )
 
 func (p *Proxy) CountryCodeFromApi() {
-	defer p.CloseTransport()
+	ctx, cancel := context.WithCancel(p.Ctx)
+	defer cancel()
+
 	apis := []string{
 		"https://api.ip.sb/geoip",
 		"https://ipapi.co/json",
@@ -26,7 +29,7 @@ func (p *Proxy) CountryCodeFromApi() {
 
 	for _, api := range apis {
 		for attempts := 0; attempts < 5; attempts++ {
-			req, err := http.NewRequestWithContext(p.Ctx, "GET", api, nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", api, nil)
 			if err != nil {
 				time.Sleep(time.Second * time.Duration(attempts))
 				continue

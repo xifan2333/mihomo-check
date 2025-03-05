@@ -1,11 +1,15 @@
 package checker
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 func (c *Checker) NetflixTest() {
-	defer c.Proxy.CloseTransport()
+	ctx, cancel := context.WithCancel(c.Proxy.Ctx)
+	defer cancel()
 
-	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", "https://www.netflix.com/title/81280792", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.netflix.com/title/81280792", nil)
 	if err != nil {
 		return
 	}

@@ -93,7 +93,7 @@ func (w *WebDAVUploader) doUpload(yamlData []byte, filename string) error {
 	if err != nil {
 		return err
 	}
-
+	req.Close = true
 	resp, err := w.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("send request failed: %w", err)

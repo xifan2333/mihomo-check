@@ -1,14 +1,17 @@
 package checker
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"strings"
 )
 
 func (c *Checker) OpenaiTest() {
-	defer c.Proxy.CloseTransport()
-	req, err := http.NewRequestWithContext(c.Proxy.Ctx, "GET", "https://android.chat.openai.com", nil)
+	ctx, cancel := context.WithCancel(c.Proxy.Ctx)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://android.chat.openai.com", nil)
 	if err != nil {
 		return
 	}
