@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptrace"
 	"time"
 
 	"github.com/bestruirui/bestsub/config"
@@ -22,38 +23,26 @@ func (c *Checker) CheckSpeed() {
 	if err != nil {
 		return
 	}
+
+	var startTime time.Time
+	var totalBytes int64
+
+	trace := &httptrace.ClientTrace{
+		GotFirstResponseByte: func() {
+			startTime = time.Now()
+		},
+	}
+
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+
 	resp, err := speedClient.Do(req)
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
 
-	buffer := make([]byte, 32*1024)
-	totalBytes := 0
-	var startTime time.Time
-	firstRead := true
-
-	for {
-		n, err := resp.Body.Read(buffer)
-		if firstRead && n > 0 {
-			startTime = time.Now()
-			firstRead = false
-		}
-		totalBytes += n
-
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			if totalBytes > 0 {
-				break
-			}
-			return
-		}
-	}
-	buffer = nil
-
-	if firstRead {
+	totalBytes, err = io.Copy(io.Discard, resp.Body)
+	if err != nil {
 		return
 	}
 
@@ -63,5 +52,4 @@ func (c *Checker) CheckSpeed() {
 	}
 
 	c.Proxy.Info.Speed = int(float64(totalBytes) / 1024 * 1000 / float64(duration))
-
 }
