@@ -40,6 +40,7 @@ type Config struct {
 	MihomoApiSecret string       `yaml:"mihomo-api-secret"`
 	Proxy           ProxyConfig  `yaml:"proxy"`
 	Rename          RenameConfig `yaml:"rename"`
+	LogLevel        string       `yaml:"log-level"`
 }
 
 var GlobalConfig Config

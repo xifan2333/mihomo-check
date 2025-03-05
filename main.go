@@ -51,7 +51,11 @@ func (app *App) Initialize() error {
 	if err := app.loadConfig(); err != nil {
 		return fmt.Errorf("load config failed: %w", err)
 	}
-	log.SetLogLevel(log.LogLevelDebug)
+	if config.GlobalConfig.LogLevel != "" {
+		log.SetLogLevel(config.GlobalConfig.LogLevel)
+	} else {
+		log.SetLogLevel("info")
+	}
 
 	checkConfig()
 

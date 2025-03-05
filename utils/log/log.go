@@ -28,8 +28,21 @@ const (
 	TimeFormat = "2006-01-02T15:04:05"
 )
 
-func SetLogLevel(level LogLevel) {
-	LogLevelSet = level
+func SetLogLevel(level string) {
+	switch level {
+	case "debug":
+		LogLevelSet = LogLevelDebug
+	case "info":
+		LogLevelSet = LogLevelInfo
+	case "warn":
+		LogLevelSet = LogLevelWarn
+	case "error":
+		LogLevelSet = LogLevelError
+	case "fatal":
+		LogLevelSet = LogLevelFatal
+	case "panic":
+		LogLevelSet = LogLevelPanic
+	}
 }
 func log(level LogLevel, format string, v ...any) {
 	if level < LogLevelSet {
