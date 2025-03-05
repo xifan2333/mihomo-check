@@ -272,21 +272,21 @@ func proxyCheckTask(arg map[string]any) {
 			break
 		}
 	}
-	for _, item := range config.GlobalConfig.Check.Items {
-		switch item {
-		case "openai":
-			checker.OpenaiTest()
-		case "youtube":
-			checker.YoutubeTest()
-		case "netflix":
-			checker.NetflixTest()
-		case "disney":
-			checker.DisneyTest()
-		case "speed":
-			checker.CheckSpeed()
-		}
-	}
 	if proxy.Info.Alive {
+		for _, item := range config.GlobalConfig.Check.Items {
+			switch item {
+			case "openai":
+				checker.OpenaiTest()
+			case "youtube":
+				checker.YoutubeTest()
+			case "netflix":
+				checker.NetflixTest()
+			case "disney":
+				checker.DisneyTest()
+			case "speed":
+				checker.CheckSpeed()
+			}
+		}
 		addAliveProxy(proxy)
 	}
 }
