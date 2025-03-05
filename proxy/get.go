@@ -16,6 +16,7 @@ import (
 	"github.com/bestruirui/bestsub/config"
 	"github.com/bestruirui/bestsub/proxy/parser"
 	"github.com/bestruirui/bestsub/utils"
+	"github.com/bestruirui/bestsub/utils/log"
 	"github.com/panjf2000/ants/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -24,7 +25,7 @@ var mihomoProxies []map[string]any
 var mihomoProxiesMutex sync.Mutex
 
 func GetProxies() ([]map[string]any, error) {
-	utils.LogInfo("currently, there are %d subscription links set", len(config.GlobalConfig.SubUrls))
+	log.Info("currently, there are %d subscription links set", len(config.GlobalConfig.SubUrls))
 
 	numWorkers := min(len(config.GlobalConfig.SubUrls), config.GlobalConfig.Check.Concurrent)
 
@@ -45,20 +46,22 @@ func GetProxies() ([]map[string]any, error) {
 func taskGetProxies(args string) {
 	data, err := getDateFromSubs(args)
 	if err != nil {
+		log.Warn("subscription link: %s get data failed: %v", log.MaskURL(args), err)
 		return
 	}
-	if IsYaml(data) {
+	if IsYaml(data, args) {
 		proxies, err := ParseYamlProxy(data)
 		if err != nil {
-			utils.LogError("subscription link: %s has no proxies", args)
+			log.Warn("subscription link: %s has no proxies", log.MaskURL(args))
 			return
 		}
 		mihomoProxiesMutex.Lock()
 		mihomoProxies = append(mihomoProxies, proxies...)
 		mihomoProxiesMutex.Unlock()
 	} else {
-		reg, _ := regexp.Compile("(ssr|ss|vmess|trojan|vless|hysteria|hy2|hysteria2)://")
+		reg, _ := regexp.Compile(`^(ssr://|ss://|vmess://|trojan://|vless://|hysteria://|hy2://|hysteria2://)`)
 		if !reg.Match(data) {
+			log.Debug("subscription link: %s is not a v2ray subscription link, attempting to decode the subscription link using base64", log.MaskURL(args))
 			data = []byte(parser.DecodeBase64(string(data)))
 		}
 		if reg.Match(data) {
@@ -81,10 +84,9 @@ func taskGetProxies(args string) {
 }
 
 func getDateFromSubs(subUrl string) ([]byte, error) {
-	maxRetries := config.GlobalConfig.SubUrlsReTry
 	var lastErr error
-
 	client := utils.NewHTTPClient()
+	maxRetries := config.GlobalConfig.SubUrlsReTry
 
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {
@@ -98,6 +100,7 @@ func getDateFromSubs(subUrl string) ([]byte, error) {
 		}
 
 		req.Header.Set("User-Agent", "clash.meta")
+		req.Close = true
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -132,30 +135,20 @@ func removeAllControlCharacters(data []byte) []byte {
 	return cleanedData
 }
 
-func IsYaml(data []byte) bool {
-	var isYamlBuffer map[string]any
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	var lines []byte
-	lineCount := 0
-	for scanner.Scan() {
-		lines = append(lines, scanner.Bytes()...)
-		lines = append(lines, '\n')
-		lineCount++
-		if lineCount >= 100 {
-			break
-		}
+func IsYaml(data []byte, subUrl string) bool {
+	reg, _ := regexp.Compile(`^(ssr://|ss://|vmess://|trojan://|vless://|hysteria://|hy2://|hysteria2://)`)
+
+	decodedData := parser.DecodeBase64(string(data))
+	if reg.MatchString(decodedData) {
+		log.Debug("subscription link: %s is a v2ray subscription link", log.MaskURL(subUrl))
+		return false
 	}
-	err := yaml.Unmarshal(lines, &isYamlBuffer)
-	if err != nil {
-		removeAllControlCharacters(lines)
-		err = yaml.Unmarshal(lines, &isYamlBuffer)
-		if err != nil {
-			isYamlBuffer = nil
-			return false
-		}
+
+	if bytes.Contains(data, []byte("proxies:")) {
+		log.Debug("subscription link: %s is a yaml file", log.MaskURL(subUrl))
+		return true
 	}
-	isYamlBuffer = nil
-	return true
+	return false
 }
 func ParseYamlProxy(data []byte) ([]map[string]any, error) {
 	var inProxiesSection bool
