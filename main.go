@@ -331,7 +331,13 @@ func proxyRenameTask(proxy *info.Proxy) {
 
 	addRenamedProxy(proxy)
 }
+
+var version string
+
 func checkConfig() {
+
+	log.Info("bestsub version: %v", version)
+
 	if config.GlobalConfig.Check.Concurrent <= 0 {
 		log.Error("concurrent must be greater than 0")
 		os.Exit(1)
