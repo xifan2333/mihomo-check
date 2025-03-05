@@ -15,8 +15,9 @@ import (
 	"github.com/bestruirui/bestsub/proxy/info"
 	"github.com/bestruirui/bestsub/proxy/saver"
 	"github.com/bestruirui/bestsub/utils"
+	"github.com/bestruirui/bestsub/utils/log"
 	"github.com/fsnotify/fsnotify"
-	"github.com/metacubex/mihomo/log"
+	mihomoLog "github.com/metacubex/mihomo/log"
 	"github.com/panjf2000/ants/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -41,20 +42,25 @@ func NewApp() *App {
 }
 
 func (app *App) Initialize() error {
+
 	if err := app.initConfigPath(); err != nil {
 		return fmt.Errorf("init config path failed: %w", err)
+
 	}
 
 	if err := app.loadConfig(); err != nil {
 		return fmt.Errorf("load config failed: %w", err)
 	}
+	log.SetLogLevel(log.LogLevelDebug)
+
 	checkConfig()
+
 	if err := app.initConfigWatcher(); err != nil {
 		return fmt.Errorf("init config watcher failed: %w", err)
 	}
 
 	app.interval = config.GlobalConfig.Check.Interval
-	log.SetLevel(log.ERROR)
+	mihomoLog.SetLevel(mihomoLog.ERROR)
 	if config.GlobalConfig.Save.Method == "http" {
 		saver.StartHTTPServer()
 	}
@@ -91,22 +97,20 @@ func (app *App) loadConfig() error {
 		return fmt.Errorf("parse config file failed: %w", err)
 	}
 
-	utils.LogInfo("read config file success")
-
 	info.CountryCodeRegexInit(app.renamePath)
 
 	return nil
 }
 
 func (app *App) createDefaultConfig() error {
-	utils.LogInfo("config file not found, create default config file")
+	log.Info("config file not found, create default config file")
 
 	if err := os.WriteFile(app.configPath, []byte(config.DefaultConfigTemplate), 0644); err != nil {
 		return fmt.Errorf("write default config file failed: %w", err)
 	}
 
-	utils.LogInfo("default config file created")
-	utils.LogInfo("please edit config file: %v", app.configPath)
+	log.Info("default config file created")
+	log.Info("please edit config file: %v", app.configPath)
 	os.Exit(0)
 	return nil
 }
@@ -136,9 +140,9 @@ func (app *App) initConfigWatcher() error {
 
 					go func() {
 						<-app.reloadTimer.C
-						utils.LogInfo("config file changed, reloading")
+						log.Info("config file changed, reloading")
 						if err := app.loadConfig(); err != nil {
-							utils.LogError("reload config file failed: %v", err)
+							log.Error("reload config file failed: %v", err)
 							return
 						}
 						app.interval = config.GlobalConfig.Check.Interval
@@ -148,7 +152,7 @@ func (app *App) initConfigWatcher() error {
 				if !ok {
 					return
 				}
-				utils.LogError("config file watcher error: %v", err)
+				log.Error("config file watcher error: %v", err)
 			}
 		}
 	}()
@@ -157,7 +161,7 @@ func (app *App) initConfigWatcher() error {
 		return fmt.Errorf("add config file watcher failed: %w", err)
 	}
 
-	utils.LogInfo("config file watcher started")
+	log.Info("config file watcher started")
 	return nil
 }
 
@@ -173,7 +177,7 @@ func (app *App) Run() {
 		maintask()
 		utils.UpdateSubs()
 		nextCheck := time.Now().Add(time.Duration(app.interval) * time.Minute)
-		utils.LogInfo("next check time: %v", nextCheck.Format("2006-01-02 15:04:05"))
+		log.Info("next check time: %v", nextCheck.Format("2006-01-02 15:04:05"))
 		time.Sleep(time.Duration(app.interval) * time.Minute)
 	}
 }
@@ -203,7 +207,7 @@ func main() {
 	app := NewApp()
 
 	if err := app.Initialize(); err != nil {
-		utils.LogError("initialize failed: %v", err)
+		log.Error("initialize failed: %v", err)
 		os.Exit(1)
 	}
 
@@ -212,12 +216,12 @@ func main() {
 func maintask() {
 	proxies, err := proxy.GetProxies()
 	if err != nil {
-		utils.LogError("get proxies failed: %v", err)
+		log.Error("get proxies failed: %v", err)
 		return
 	}
-	utils.LogInfo("get proxies success: %v proxies", len(proxies))
+	log.Info("get proxies success: %v proxies", len(proxies))
 	proxies = info.DeduplicateProxies(proxies)
-	utils.LogInfo("deduplicate proxies: %v proxies", len(proxies))
+	log.Info("deduplicate proxies: %v proxies", len(proxies))
 
 	var wg sync.WaitGroup
 	aliveProxies = make([]*info.Proxy, 0)
@@ -243,7 +247,7 @@ func maintask() {
 	}
 	wg.Wait()
 
-	utils.LogInfo("check and rename end %v proxies", len(renamedProxies))
+	log.Info("check and rename end %v proxies", len(renamedProxies))
 
 	saver.SaveConfig(renamedProxies)
 
@@ -325,75 +329,75 @@ func proxyRenameTask(proxy *info.Proxy) {
 }
 func checkConfig() {
 	if config.GlobalConfig.Check.Concurrent <= 0 {
-		utils.LogError("concurrent must be greater than 0")
+		log.Error("concurrent must be greater than 0")
 		os.Exit(1)
 	}
-	utils.LogInfo("concurrents: %v", config.GlobalConfig.Check.Concurrent)
+	log.Info("concurrents: %v", config.GlobalConfig.Check.Concurrent)
 	switch config.GlobalConfig.Save.Method {
 	case "webdav":
 		if config.GlobalConfig.Save.WebDAVURL == "" {
-			utils.LogError("webdav-url is required when save-method is webdav")
+			log.Error("webdav-url is required when save-method is webdav")
 			os.Exit(1)
 		} else {
-			utils.LogInfo("save method: webdav")
+			log.Info("save method: webdav")
 		}
 	case "http":
 		if config.GlobalConfig.Save.Port <= 0 {
-			utils.LogError("port must be greater than 0 when save-method is http")
+			log.Error("port must be greater than 0 when save-method is http")
 			os.Exit(1)
 		} else {
-			utils.LogInfo("save method: http")
+			log.Info("save method: http")
 		}
 	case "gist":
 		if config.GlobalConfig.Save.GithubGistID == "" {
-			utils.LogError("github-gist-id is required when save-method is gist")
+			log.Error("github-gist-id is required when save-method is gist")
 			os.Exit(1)
 		}
 		if config.GlobalConfig.Save.GithubToken == "" {
-			utils.LogError("github-token is required when save-method is gist")
+			log.Error("github-token is required when save-method is gist")
 			os.Exit(1)
 		}
-		utils.LogInfo("save method: gist")
+		log.Info("save method: gist")
 	}
 	if config.GlobalConfig.SubUrls == nil {
-		utils.LogError("sub-urls is required")
+		log.Error("sub-urls is required")
 		os.Exit(1)
 	}
 	switch config.GlobalConfig.Rename.Method {
 	case "api":
-		utils.LogInfo("rename method: api")
+		log.Info("rename method: api")
 	case "regex":
-		utils.LogInfo("rename method: regex")
+		log.Info("rename method: regex")
 	case "mix":
-		utils.LogInfo("rename method: mix")
+		log.Info("rename method: mix")
 	default:
-		utils.LogError("rename-method must be one of api, regex, mix")
+		log.Error("rename-method must be one of api, regex, mix")
 		os.Exit(1)
 	}
 	if config.GlobalConfig.Proxy.Type == "http" {
-		utils.LogInfo("proxy type: http")
+		log.Info("proxy type: http")
 	} else if config.GlobalConfig.Proxy.Type == "socks" {
-		utils.LogInfo("proxy type: socks")
+		log.Info("proxy type: socks")
 	} else {
-		utils.LogInfo("not use proxy")
+		log.Info("not use proxy")
 	}
-	utils.LogInfo("progress display: %v", config.GlobalConfig.PrintProgress)
+	log.Info("progress display: %v", config.GlobalConfig.PrintProgress)
 	if config.GlobalConfig.Check.Interval < 10 {
-		utils.LogError("check-interval must be greater than 10 minutes")
+		log.Error("check-interval must be greater than 10 minutes")
 		os.Exit(1)
 	}
 	if len(config.GlobalConfig.Check.Items) == 0 {
-		utils.LogInfo("check items: none")
+		log.Info("check items: none")
 	} else {
-		utils.LogInfo("check items: %v", config.GlobalConfig.Check.Items)
+		log.Info("check items: %v", config.GlobalConfig.Check.Items)
 	}
 	if config.GlobalConfig.MihomoApiUrl != "" {
 		version, err := utils.GetVersion()
 		if err != nil {
-			utils.LogError("get version failed: %v", err)
+			log.Error("get version failed: %v", err)
 		} else {
-			utils.LogInfo("auto update provider: true")
-			utils.LogInfo("mihomo version: %v", version)
+			log.Info("auto update provider: true")
+			log.Info("mihomo version: %v", version)
 		}
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bestruirui/bestsub/utils"
+	"github.com/bestruirui/bestsub/utils/log"
 	"github.com/dlclark/regexp2"
 	"gopkg.in/yaml.v3"
 )
@@ -125,15 +125,15 @@ var CountryCodeRegex []Country
 func CountryCodeRegexInit(renamePath string) {
 	data, err := os.ReadFile(renamePath)
 	if err != nil {
-		utils.LogError("read rename file failed: %v", err)
-		utils.LogInfo("please download rename file from https://github.com/bestruirui/BestSub/tree/master/doc/rename.yaml")
+		log.Error("read rename file failed: %v", err)
+		log.Info("please download rename file from https://github.com/bestruirui/BestSub/tree/master/doc/rename.yaml")
 		os.Exit(1)
 	}
 
 	err = yaml.Unmarshal(data, &CountryCodeRegex)
 	if err != nil {
-		utils.LogError("parse rename file failed: %v", err)
-		utils.LogInfo("please download rename file from https://github.com/bestruirui/BestSub/tree/master/doc/rename.yaml")
+		log.Error("parse rename file failed: %v", err)
+		log.Info("please download rename file from https://github.com/bestruirui/BestSub/tree/master/doc/rename.yaml")
 		os.Exit(1)
 	}
 }
