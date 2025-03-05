@@ -95,7 +95,7 @@ go run main.go -f /path/to/config.yaml
 
 ### 自建测速地址
 
-- 将 [worker](./cloudflare/worker.js) 部署到 Cloudflare Workers
+- 将 [worker](./doc/cloudflare/worker.js) 部署到 Cloudflare Workers
 
 - 将 `speed-test-url` 配置为你的 worker 地址
 

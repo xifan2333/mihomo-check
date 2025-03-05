@@ -76,7 +76,7 @@ Just run it, and a configuration file will be generated in the current directory
 
 ### Self-hosted Speed Test Address
 
-- Deploy the [worker](./cloudflare/worker.js) to Cloudflare Workers
+- Deploy the [worker](./doc/cloudflare/worker.js) to Cloudflare Workers
 
 - Set `speed-test-url` to your worker address
 
