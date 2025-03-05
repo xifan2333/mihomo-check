@@ -34,7 +34,7 @@ func NewConfigSaver(results []*info.Proxy) *ConfigSaver {
 					if utils.Contains(config.GlobalConfig.Check.Items, "speed") {
 						return result.Info.Speed > config.GlobalConfig.Check.MinSpeed
 					}
-					return true
+					return result.Info.Alive
 				},
 			},
 			{

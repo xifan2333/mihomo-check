@@ -22,14 +22,14 @@ func addDedupProxy(key string, arg map[string]any) {
 	}
 }
 
-func DeduplicateProxies(proxies []map[string]any) []map[string]any {
+func DeduplicateProxies(proxies *[]map[string]any) {
 	var wg sync.WaitGroup
 	dedupProxies = make(map[string]map[string]any)
 
 	pool, _ := ants.NewPool(config.GlobalConfig.Check.Concurrent)
 	defer pool.Release()
 
-	for _, proxy := range proxies {
+	for _, proxy := range *proxies {
 		wg.Add(1)
 		pool.Submit(func() {
 			defer wg.Done()
@@ -38,15 +38,12 @@ func DeduplicateProxies(proxies []map[string]any) []map[string]any {
 	}
 	wg.Wait()
 
-	result := make([]map[string]any, 0, len(dedupProxies))
+	*proxies = (*proxies)[:0]
 
 	for _, proxy := range dedupProxies {
-		result = append(result, proxy)
+		*proxies = append(*proxies, proxy)
 	}
-
 	dedupProxies = nil
-
-	return result
 }
 
 func deduplicateTask(arg map[string]any) {

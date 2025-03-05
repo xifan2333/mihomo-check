@@ -187,10 +187,10 @@ func (app *App) Run() {
 }
 
 var (
-	aliveProxies   []*info.Proxy
-	renamedProxies []*info.Proxy
-	aliveMutex     sync.Mutex
-	aliveCount     int
+	aliveProxies []*info.Proxy
+	aliveMutex   sync.Mutex
+	aliveCount   int
+	proxyPool    sync.Pool
 )
 
 func addAliveProxy(proxy *info.Proxy) {
@@ -200,13 +200,13 @@ func addAliveProxy(proxy *info.Proxy) {
 	aliveProxies = append(aliveProxies, proxy)
 	aliveCount++
 }
-func addRenamedProxy(proxy *info.Proxy) {
-	aliveMutex.Lock()
-	defer aliveMutex.Unlock()
-	renamedProxies = append(renamedProxies, proxy)
-}
 
 func main() {
+	proxyPool = sync.Pool{
+		New: func() interface{} {
+			return &info.Proxy{}
+		},
+	}
 
 	app := NewApp()
 
@@ -223,12 +223,17 @@ func maintask() {
 		log.Error("get proxies failed: %v", err)
 		return
 	}
+
 	log.Info("get proxies success: %v proxies", len(proxies))
-	proxies = info.DeduplicateProxies(proxies)
+
+	info.DeduplicateProxies(&proxies)
+
 	log.Info("deduplicate proxies: %v proxies", len(proxies))
 
 	var wg sync.WaitGroup
-	aliveProxies = aliveProxies[:0]
+
+	aliveProxies = make([]*info.Proxy, 0, len(proxies))
+
 	pool, _ := ants.NewPool(config.GlobalConfig.Check.Concurrent)
 	defer pool.Release()
 
@@ -239,9 +244,14 @@ func maintask() {
 			proxyCheckTask(proxy)
 		})
 	}
+
 	wg.Wait()
 
-	renamedProxies = renamedProxies[:0]
+	log.Info("check end %v proxies", len(aliveProxies))
+
+	proxies = nil
+
+	log.Info("start rename proxies")
 	for _, proxy := range aliveProxies {
 		wg.Add(1)
 		pool.Submit(func() {
@@ -251,14 +261,18 @@ func maintask() {
 	}
 	wg.Wait()
 
-	log.Info("check and rename end %v proxies", len(renamedProxies))
+	log.Info("end rename proxies")
 
-	saver.SaveConfig(renamedProxies)
+	saver.SaveConfig(aliveProxies)
 
+	aliveProxies = nil
 	runtime.GC()
 }
 
 func proxyCheckTask(arg map[string]any) {
+	p := proxyPool.Get().(*info.Proxy)
+	defer proxyPool.Put(p)
+
 	proxy := proxy.NewProxy(arg)
 	if proxy == nil {
 		return
@@ -291,6 +305,7 @@ func proxyCheckTask(arg map[string]any) {
 	}
 }
 func proxyRenameTask(proxy *info.Proxy) {
+
 	proxy.New()
 	defer proxy.Close()
 	if proxy == nil {
@@ -328,8 +343,6 @@ func proxyRenameTask(proxy *info.Proxy) {
 	}
 
 	proxy.Raw["name"] = name
-
-	addRenamedProxy(proxy)
 }
 
 var version string
