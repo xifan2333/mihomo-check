@@ -52,16 +52,17 @@ func (p *Proxy) CloseTransport() {
 		transport.CloseIdleConnections()
 	}
 }
-func (p *Proxy) New() {
+func (p *Proxy) New() error {
 	p.Ctx, p.Cancel = context.WithCancel(context.Background())
 	proxy, err := adapter.ParseProxy(p.Raw)
 	if err != nil {
-		return
+		return err
 	}
 	p.Client = &http.Client{
 		Timeout:   time.Duration(config.GlobalConfig.Check.Timeout) * time.Millisecond,
 		Transport: BuildTransport(proxy, p.Ctx),
 	}
+	return nil
 }
 func BuildTransport(proxy constant.Proxy, ctx context.Context) *http.Transport {
 	transport := &http.Transport{

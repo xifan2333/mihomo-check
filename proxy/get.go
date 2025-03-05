@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/bestruirui/bestsub/config"
+	"github.com/bestruirui/bestsub/proxy/info"
 	"github.com/bestruirui/bestsub/proxy/parser"
 	"github.com/bestruirui/bestsub/utils"
 	"github.com/bestruirui/bestsub/utils/log"
@@ -26,7 +27,7 @@ var (
 	mihomoProxiesMutex sync.Mutex
 )
 
-func GetProxies() ([]map[string]any, error) {
+func GetProxies(proxies *[]info.Proxy) {
 	log.Info("currently, there are %d subscription links set", len(config.GlobalConfig.SubUrls))
 	mihomoProxies = mihomoProxies[:0]
 	numWorkers := min(len(config.GlobalConfig.SubUrls), config.GlobalConfig.Check.Concurrent)
@@ -38,14 +39,13 @@ func GetProxies() ([]map[string]any, error) {
 		wg.Add(1)
 		pool.Submit(func() {
 			defer wg.Done()
-			taskGetProxies(subUrl)
+			taskGetProxies(subUrl, proxies)
 		})
 	}
 	wg.Wait()
-	return mihomoProxies, nil
 }
 
-func taskGetProxies(args string) {
+func taskGetProxies(args string, proxiesInfo *[]info.Proxy) {
 	data, err := getDateFromSubs(args)
 	if err != nil {
 		log.Warn("subscription link: %s get data failed: %v", log.MaskURL(args), err)
@@ -57,9 +57,11 @@ func taskGetProxies(args string) {
 			log.Warn("subscription link: %s has no proxies", log.MaskURL(args))
 			return
 		}
-		mihomoProxiesMutex.Lock()
-		mihomoProxies = append(mihomoProxies, proxies...)
-		mihomoProxiesMutex.Unlock()
+		for _, proxy := range proxies {
+			mihomoProxiesMutex.Lock()
+			*proxiesInfo = append(*proxiesInfo, info.Proxy{Raw: proxy})
+			mihomoProxiesMutex.Unlock()
+		}
 	} else {
 		reg, _ := regexp.Compile(`^(ssr://|ss://|vmess://|trojan://|vless://|hysteria://|hy2://|hysteria2://)`)
 		if !reg.Match(data) {

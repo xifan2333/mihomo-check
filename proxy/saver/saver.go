@@ -17,12 +17,12 @@ type ProxyCategory struct {
 }
 
 type ConfigSaver struct {
-	results    []*info.Proxy
+	results    *[]info.Proxy
 	categories []ProxyCategory
 	saveMethod func([]byte, string) error
 }
 
-func NewConfigSaver(results []*info.Proxy) *ConfigSaver {
+func NewConfigSaver(results *[]info.Proxy) *ConfigSaver {
 	return &ConfigSaver{
 		results:    results,
 		saveMethod: chooseSaveMethod(),
@@ -61,7 +61,7 @@ func NewConfigSaver(results []*info.Proxy) *ConfigSaver {
 	}
 }
 
-func SaveConfig(results []*info.Proxy) {
+func SaveConfig(results *[]info.Proxy) {
 	saver := NewConfigSaver(results)
 	if err := saver.Save(); err != nil {
 		log.Error("save config failed: %v", err)
@@ -82,9 +82,9 @@ func (cs *ConfigSaver) Save() error {
 }
 
 func (cs *ConfigSaver) categorizeProxies() {
-	for _, result := range cs.results {
+	for _, result := range *cs.results {
 		for i := range cs.categories {
-			if cs.categories[i].Filter(*result) {
+			if cs.categories[i].Filter(result) {
 				cs.categories[i].Proxies = append(cs.categories[i].Proxies, result.Raw)
 			}
 		}

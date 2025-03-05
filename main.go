@@ -186,27 +186,7 @@ func (app *App) Run() {
 	}
 }
 
-var (
-	aliveProxies []*info.Proxy
-	aliveMutex   sync.Mutex
-	aliveCount   int
-	proxyPool    sync.Pool
-)
-
-func addAliveProxy(proxy *info.Proxy) {
-	aliveMutex.Lock()
-	defer aliveMutex.Unlock()
-	proxy.Id = aliveCount
-	aliveProxies = append(aliveProxies, proxy)
-	aliveCount++
-}
-
 func main() {
-	proxyPool = sync.Pool{
-		New: func() interface{} {
-			return &info.Proxy{}
-		},
-	}
 
 	app := NewApp()
 
@@ -218,11 +198,9 @@ func main() {
 	app.Run()
 }
 func maintask() {
-	proxies, err := proxy.GetProxies()
-	if err != nil {
-		log.Error("get proxies failed: %v", err)
-		return
-	}
+	proxies := make([]info.Proxy, 0)
+
+	proxy.GetProxies(&proxies)
 
 	log.Info("get proxies success: %v proxies", len(proxies))
 
@@ -232,49 +210,52 @@ func maintask() {
 
 	var wg sync.WaitGroup
 
-	aliveProxies = make([]*info.Proxy, 0, len(proxies))
-
 	pool, _ := ants.NewPool(config.GlobalConfig.Check.Concurrent)
 	defer pool.Release()
 
-	for _, proxy := range proxies {
+	for i := range proxies {
 		wg.Add(1)
 		pool.Submit(func() {
 			defer wg.Done()
-			proxyCheckTask(proxy)
+			proxyCheckTask(&proxies[i])
 		})
 	}
 
 	wg.Wait()
+	var aliveCount int = 0
 
-	log.Info("check end %v proxies", len(aliveProxies))
+	for i := range proxies {
+		if proxies[i].Info.Alive {
+			proxies[i].Id = aliveCount
+			aliveCount++
+		}
+	}
 
-	proxies = nil
+	log.Info("check end %v proxies", aliveCount)
 
 	log.Info("start rename proxies")
-	for _, proxy := range aliveProxies {
-		wg.Add(1)
-		pool.Submit(func() {
-			defer wg.Done()
-			proxyRenameTask(proxy)
-		})
+	for i := range proxies {
+		if proxies[i].Info.Alive {
+			wg.Add(1)
+			pool.Submit(func() {
+				defer wg.Done()
+				proxyRenameTask(&proxies[i])
+			})
+		}
 	}
 	wg.Wait()
 
 	log.Info("end rename proxies")
 
-	saver.SaveConfig(aliveProxies)
+	saver.SaveConfig(&proxies)
 
-	aliveProxies = nil
+	proxies = nil
+
 	runtime.GC()
 }
 
-func proxyCheckTask(arg map[string]any) {
-	p := proxyPool.Get().(*info.Proxy)
-	defer proxyPool.Put(p)
-
-	proxy := proxy.NewProxy(arg)
-	if proxy == nil {
+func proxyCheckTask(proxy *info.Proxy) {
+	if proxy.New() != nil {
 		return
 	}
 	defer proxy.Close()
@@ -301,16 +282,13 @@ func proxyCheckTask(arg map[string]any) {
 				checker.CheckSpeed()
 			}
 		}
-		addAliveProxy(proxy)
 	}
 }
 func proxyRenameTask(proxy *info.Proxy) {
-
-	proxy.New()
-	defer proxy.Close()
-	if proxy == nil {
+	if proxy.New() != nil {
 		return
 	}
+	defer proxy.Close()
 	switch config.GlobalConfig.Rename.Method {
 	case "api":
 		proxy.CountryCodeFromApi()
